@@ -1,0 +1,139 @@
+{% extends "employee_layout.html" %} {% block title %}Submit Task{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Submiy Task</h1>
+  <div class="card">
+    <div class="card-body">
+      <form
+        action="{{ url_for('employee_submit_task') }}"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        <div class="mb-3">
+          <label for="assigned_task_id" class="form-label"
+            >Link to Assigned Task (Optional)</label
+          >
+          <select
+            class="form-select"
+            id="assigned_task_id"
+            name="assigned_task_id"
+          >
+            <option value="" data-project-name="">None - General Update</option>
+            {% for task in assigned_tasks %} {# MODIFICATION: Removed project
+            name from text, added it as a data attribute #}
+            {% if task.status!='Completed' %}
+            <option
+              value="{{ task.id }}"
+              data-project-name="{{ task.project_name }}"
+            >
+              {{ task.task_name }} (Due: {{ task.due_date }})
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        {# MODIFICATION: Added a disabled input field to display the project
+        name #}
+        <div class="mb-3">
+          <label for="project_name_display" class="form-label"
+            >Project Name</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="project_name_display"
+            disabled
+            placeholder="Project name will appear here..."
+          />
+        </div>
+
+        <div class="mb-3">
+          <label for="task_description" class="form-label"
+            >Task Description <span class="text-danger">*</span></label
+          >
+          {# This textarea will be replaced by the CKEditor rich text editor #}
+          <textarea
+            class="form-control"
+            id="task_description"
+            name="task_description"
+            rows="5"
+            
+          ></textarea>
+           <!-- Inline error message -->
+    <div id="task_description_error" class="text-danger mt-1" style="display:none;">
+        Task Description is required.
+    </div>
+        </div>
+        <div class="mb-3">
+          <label for="status" class="form-label">Status</label>
+          <select class="form-select" id="status" name="status">
+            <option value="Ongoing">Ongoing</option>
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+            <option value="Blocked">Blocked</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="attachment" class="form-label"
+            >Attachment (Optional)</label
+          >
+          <input
+            class="form-control"
+            type="file"
+            id="attachment"
+            name="attachment"
+          />
+        </div>
+        <button type="submit" class="btn btn-success w-100" id="submitBtn">Submit Task</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# MODIFICATION: Added CKEditor script and combined initialization logic. #}
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Logic for dynamically updating the project name display
+    const taskSelect = document.getElementById("assigned_task_id");
+    const projectNameInput = document.getElementById("project_name_display");
+
+    taskSelect.addEventListener("change", function () {
+      const selectedOption = this.options[this.selectedIndex];
+      const projectName = selectedOption.getAttribute("data-project-name");
+      projectNameInput.value = projectName || ""; // Set to empty if no task is selected
+    });
+
+    // Initialize CKEditor on the task_description textarea
+    let ckeditorInstance;
+
+ClassicEditor.create(document.querySelector("#task_description"))
+  .then((editor) => {
+    ckeditorInstance = editor; // <-- store the instance
+    console.log("CKEditor was initialized successfully.", editor);
+  })
+  .catch((error) => {
+    console.error("Error during CKEditor initialization.", error);
+  });
+
+// Sync CKEditor content and validate before form submit
+document.querySelector("form").addEventListener("submit", function (e) {
+  if (!ckeditorInstance) return; // editor not ready yet, allow submit or block based on your need
+
+  const data = ckeditorInstance.getData().trim(); // get editor content
+  if (!data) {
+    e.preventDefault(); // stop form submission
+    alert("Task Description is required!");
+  } else {
+    document.querySelector("#task_description").value = data; // put content in textarea
+    // 👉 Disable button instantly
+    const submitBtn = document.getElementById("submitBtn");
+    submitBtn.disabled = true;
+    submitBtn.innerText = "Submitting...";
+  }
+});
+
+  });
+</script>
+{% endblock %}

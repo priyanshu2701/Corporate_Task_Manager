@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SuperAdmin Dashboard - Create Task</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='./assets/css/main.css') }}"
+    />
+    <style>
+      /* Common CSS styles from other forms (adduser.html, createproject.html) */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Form Container */
+      .form-container {
+        flex: 1;
+        padding: 40px;
+        background: white;
+        margin: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      }
+      
+      /* Alert styling */
+      .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+        padding: 15px;
+        font-size: 1rem;
+      }
+
+      /* Section Titles */
+      .section-title {
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .section-title h4 {
+        color: #1e40af;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Form Rows and Columns */
+      .row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px; /* Adjusted for consistency */
+      }
+
+      .col-md-6 {
+        flex: 1;
+      }
+      
+      .col-md-12 {
+        flex-basis: 100%;
+      }
+
+      .mb-3 {
+        margin-bottom: 20px;
+      }
+
+      /* Form Labels and Inputs */
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #374151;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .form-control, .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+        outline: none;
+      }
+      
+      .form-control:focus, .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      .form-control::placeholder {
+        color: #9ca3af;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+      }
+
+      .btn-info { /* Used for Add Task button */
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        box-shadow: 0 2px 10px rgba(23, 162, 184, 0.3);
+      }
+
+      .btn-info:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+      }
+
+      .form-text.text-muted {
+          font-size: 0.85rem;
+          color: #6c757d !important; /* Ensure it's muted */
+          margin-top: 5px;
+          display: block; /* Ensure it's on its own line */
+      }
+      
+      .overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 1000; /* Below sidebar, above main content */
+          display: none;
+      }
+
+      .overlay.active {
+          display: block;
+      }
+
+      /* Animation */
+      .form-container {
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Mobile Responsive */
+      @media (max-width: 768px) {
+        .main-content {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          height: auto;
+          order: 1;
+        }
+
+        .form-container {
+          margin: 10px;
+          padding: 25px 20px;
+          order: 2;
+        }
+
+        .section-title h4 {
+          font-size: 1.3rem;
+        }
+
+        .row {
+          flex-direction: column;
+          gap: 0;
+        }
+
+        .col-md-6 {
+          flex: none;
+        }
+
+        .form-control, .form-select, .btn {
+          padding: 10px 14px;
+          font-size: 0.95rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .form-container {
+          margin: 5px;
+          padding: 20px 15px;
+        }
+
+        .section-title h4 {
+          font-size: 1.2rem;
+        }
+
+        .form-control, .form-select, .btn {
+          padding: 8px 12px;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="overlay" id="overlay"></div>
+    <div class="main-content" id="mainContent">
+      {% include 'sidebar.html' %}
+      <div id="taskForm" class="form-container">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="section-title">
+          <h4>📋 Add New Task</h4>
+        </div>
+        <form action="/add_task" method="POST">
+          <div class="mb-3">
+            <label class="form-label">Task Name</label>
+            <input
+              name="task_name"
+              class="form-control"
+              required
+              placeholder="e.g., Design UI for dashboard"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Task Description</label>
+            <textarea
+              name="task_description"
+              class="form-control"
+              rows="3"
+              placeholder="Provide detailed task description..."
+            ></textarea>
+          </div>
+          <div class="row">
+            {% if session['user_role'] in ('head','employee')  %}
+              {# For Admins: Department is fixed, no filter needed #}
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control" value="{{ session['department'] }}" disabled>
+              </div>
+              <div class="col-md-6 mb-3">
+                {% if session['user_role']=='head' %}
+                  <label class="form-label">Assigned To (Employees/Interns)</label>
+
+                  <select name="assigned_to_user_ids" class="form-select" multiple required id="assignedToSelect">
+                    {% for user_item in employees_and_interns %}
+                        <option value="{{ user_item.id }}"
+                            {% if (user_item.id|string) in busy_users %}
+                                class="bg-warning text-dark"
+                            {% else %}
+                                class="bg-success text-white"
+                            {% endif %}
+                        >
+                            {{ user_item.name }} ({{ user_item.email }})
+                            {% if (user_item.id|string) in busy_users %}
+                                🟠 Busy
+                            {% else %}
+                                🟢 Free
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                    <label class="form-label">Assigned To (Interns)</label>
+
+                     <select name="assigned_to_user_ids" class="form-select" multiple required id="assignedToSelect">
+                    {% for user_item in interns %}
+                        <option value="{{ user_item.id }}"
+                            {% if (user_item.id|string) in busy_users %}
+                                class="bg-warning text-dark"
+                            {% else %}
+                                class="bg-success text-white"
+                            {% endif %}
+                        >
+                            {{ user_item.name }} ({{ user_item.email }})
+                            {% if (user_item.id|string) in busy_users %}
+                                🟠 Busy
+                            {% else %}
+                                🟢 Free
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+            </div>
+
+            {% else %}
+              {# For Superadmins: Show the department filter #}
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Filter by Department</label>
+                <select class="form-select" id="assignedToDepartmentFilter">
+                  <option value="">All Departments</option>
+                  <option value="Digital">Digital</option>
+                  <option value="Graphics">Graphics</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Developer">Developer</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Assigned To Admin(s)</label>
+                <select name="assigned_to_user_ids" class="form-select" multiple required id="assignedToSelect">
+                  {% for user_item in admins %}
+                    <option value="{{ user_item.id }}" data-department="{{ user_item.department }}">{{ user_item.name }} ({{ user_item.email }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endif %}
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Due Date</label>
+              <input
+                name="due_date"
+                type="date"
+                class="form-control"
+                required
+                value="{{ today_date }}"
+                min="{{ today_date }}"
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Project (Optional)</label>
+              <select name="project_id_task" class="form-select">
+                <option value="">Select Project</option>
+                {% for project in projects %}
+                <option value="{{ project.id }}">{{ project.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-info">Add Task</button>
+        </form>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dueDateInput = document.querySelector('input[name="due_date"]');
+    
+        const today = new Date().toISOString().split('T')[0];
+        dueDateInput.min = today;
+        const assignedToSelect = document.getElementById('assignedToSelect');
+        
+        const choices = new Choices(assignedToSelect, {
+            removeItemButton: true,
+        });
+
+        // This filter element only exists for superadmins
+        const departmentFilter = document.getElementById('assignedToDepartmentFilter');
+        
+        if (departmentFilter) {
+            const allUsers = Array.from(assignedToSelect.options).map(option => ({
+                value: option.value,
+                label: option.textContent,
+                customProperties: {
+                    department: option.dataset.department
+                }
+            }));
+
+            departmentFilter.addEventListener('change', function() {
+                const selectedDepartment = this.value;
+                
+                const filteredUsers = allUsers.filter(user => {
+                    return selectedDepartment === '' || user.customProperties.department === selectedDepartment;
+                });
+
+                choices.clearStore();
+                choices.setChoices(filteredUsers, 'value', 'label', true);
+            });
+        }
+        
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('.form-control, .form-select');
+        
+        inputs.forEach(input => {
+          input.addEventListener('blur', function() {
+            if (this.value.trim() !== '' || this.type === 'date') {
+              this.style.borderColor = '#10b981';
+            } else if (this.hasAttribute('required')) {
+              this.style.borderColor = '#ef4444';
+            }
+          });
+          
+          input.addEventListener('focus', function() {
+            this.style.borderColor = '#2563eb';
+          });
+        });
+
+    });
+</script>
+  </body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ongoing Tasks - {{ department }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='./assets/css/main.css') }}">
+    <style>
+      /* General Body and Layout from your reference */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        display: flex; /* Enables flexbox for sidebar and main content */
+        min-height: 100vh;
+      }
+
+      /* Container for the main content area */
+      .content-container {
+        flex: 1; /* Allows the container to grow and fill available space */
+        padding: 40px;
+        background: white;
+        margin: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Section Title */
+      .section-title {
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .section-title h4 {
+        color: #1e40af;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* Table Styles */
+      .table-responsive {
+          overflow-x: auto; 
+          margin-top: 20px;
+      }
+
+      .table {
+          width: 100%;
+          border-collapse: collapse; 
+          margin-bottom: 1rem; 
+          color: #212529; 
+      }
+
+      .table th,
+      .table td {
+          padding: 12px 15px; 
+          vertical-align: middle;
+          border-top: 1px solid #dee2e6; 
+      }
+
+      .table thead th {
+          vertical-align: bottom;
+          border-bottom: 2px solid #dee2e6; 
+          background-color: #f2f5f9; 
+          color: #495057; 
+          font-weight: 600;
+          text-align: left;
+      }
+      
+      /* --- MODIFICATION: BOLD FIRST COLUMN --- */
+      .table thead th:first-child,
+      .table tbody td:first-child {
+          font-weight: bold;
+      }
+
+      .table-hover tbody tr:hover {
+          background-color: #f0f8ff; 
+      }
+
+      /* Status Badges */
+      .status-badge {
+          padding: 0.35em 0.8em;
+          border-radius: 50px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border: 1px solid transparent;
+      }
+      
+      .status-ongoing { background-color: #e7f5ff; color: #1c7ed6; border-color: #a5d8ff;}
+      .status-in-progress { background-color: #f3e8ff; color: #7048e8; border-color: #d0bfff;}
+      .status-pending { background-color: #fff9db; color: #f59f00; border-color: #ffec99;}
+      .status-completed { background-color: #e6fcf5; color: #2f9e44; border-color: #96f2d7;}
+      .status-blocked { background-color: #ffe3e3; color: #e03131; border-color: #ffa8a8;}
+
+      /* No tasks message */
+      .no-tasks {
+          text-align: center;
+          padding: 40px;
+          color: #6c757d;
+          font-size: 1.1rem;
+          background-color: #fdfdfd;
+          border-radius: 10px;
+          border: 1px dashed #e9ecef;
+      }
+
+      /* Button Styles */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 8px 16px; 
+        font-size: 0.875rem; 
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px; 
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary {
+          background-color: #6c757d;
+          color: white;
+      }
+
+      .btn-secondary:hover {
+          background-color: #5a6268;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .main-content {
+          flex-direction: column; 
+        }
+        .content-container {
+          margin: 10px;
+          padding: 25px 20px;
+        }
+        .section-title h4 {
+            font-size: 1.2rem;
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        {% include 'sidebar.html' %}
+        <div class="content-container">
+            <div class="section-title">
+                <h4>
+                    <i class="fas fa-tasks"></i>Tasks Assigned To You
+                </h4>
+            </div>
+   
+    <div class="card">
+        <div class="card-body">
+            {% if assigned_tasks %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th class="font-bold">Project</th>
+                            <th>Task Name</th>
+                            <th>Description</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Assigned By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    {% for task in assigned_tasks %}
+    <tr>
+        <td><strong>{{ task.project_name or 'N/A' }}</strong></td>
+        <td>{{ task.task_name or '—' }}</td>
+        <td>{{ task.task_description or '—' }}</td>
+        <td>{{ task.due_date or '—' }}</td>
+        <td><span class="status-badge
+            {% if task.status == 'Pending' %}status-pending
+        {% elif task.status == 'Completed' %}status-completed
+        {% elif task.status == 'Ongoing' %}status-ongoing
+        {% elif task.status == 'In Progress' %}status-in-progress
+        {% elif task.status == 'Blocked' %}status-blocked
+        {% endif %}">{{ task.status or '—' }}</span></td>
+
+        <td>{{ task.assigned_by_name or '—' }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center p-4">
+                <p class="lead">No tasks assigned to you yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</body>
+    </html>

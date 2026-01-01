@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Submit Task</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+
+ 
+    <style>
+       
+        
+        .page-title {
+            font-weight: 700;
+            color: #1a237e;
+        }
+           * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .content-container {
+        flex: 1;
+        padding: 40px;
+        background: white;
+        margin: 20px;
+        border-radius: 15px;
+        
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.5s ease-out;
+
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .section-title {
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .section-title h4 {
+        color: #1e40af;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+    :root {
+        --primary-color: #6366f1;
+        --primary-dark: #4f46e5;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #3b82f6;
+        --gray-50: #f8fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --border-radius: 12px;
+        --border-radius-lg: 16px;
+    }
+
+    .content-wrapper {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+        padding: 0 !important;
+    }
+
+    .container-fluid {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        color: white;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(50%, -50%);
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.125rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card .icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-card.total .icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+    .stat-card.pending .icon { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+    .stat-card.completed .icon { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+    .stat-card.in-progress .icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+
+    .stat-card .value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-card .label {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        font-weight: 500;
+    }
+
+    .main-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        table-layout: fixed;
+        min-width: 1200px;
+    }
+
+    .modern-table th {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-700);
+        border-bottom: 1px solid var(--gray-200);
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .modern-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        vertical-align: top;
+        word-wrap: break-word;
+    }
+
+    .modern-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .modern-table tbody tr:hover {
+        background: var(--gray-50);
+    }
+
+    .project-name {
+        font-weight: 600;
+        color: var(--gray-900);
+        font-size: 0.95rem;
+    }
+
+    .description-cell {
+        max-width: 250px;
+        min-width: 250px;
+        line-height: 1.5;
+    }
+    
+    .ai-summary-cell {
+        max-width: 450px;
+        min-width: 450px;
+        line-height: 1.5;
+    }
+
+    .description-preview {
+        color: var(--gray-600);
+        line-height: 1.5;
+        word-break: break-word;
+        margin-bottom: 0.5rem;
+    }
+
+    .description-preview.collapsed {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .description-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        font-size: 0.8rem;
+        color: var(--primary-color);
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        border: none;
+        background: none;
+    }
+
+    .action-btn:hover {
+        background: var(--primary-color);
+        color: white;
+        text-decoration: none;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .status-badge.pending { background: #fef3c7; color: #d97706; }
+    .status-badge.completed { background: #d1fae5; color: #059669; }
+    .status-badge.in-progress { background: #e0e7ff; color: #4f46e5; }
+    .status-badge.review { background: #fce7f3; color: #be185d; }
+
+    .attachment-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        background: #f0f9ff;
+        border: 1px solid #e0f2fe;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+    }
+
+    .attachment-link:hover {
+        background: var(--primary-color);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    .date-text {
+        color: var(--gray-600);
+        font-weight: 500;
+    }
+
+    .ai-summary {
+        color: var(--gray-600);
+        line-height: 1.4;
+        font-size: 0.875rem;
+    }
+
+    /* Enhanced Pagination */
+    .pagination-container {
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .page-item .page-link {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        color: var(--gray-600);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        min-width: 44px;
+        text-align: center;
+        display: block;
+    }
+
+    .page-item .page-link:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .page-item.disabled .page-link {
+        background: var(--gray-100);
+        color: var(--gray-400);
+        cursor: not-allowed;
+        border-color: var(--gray-200);
+    }
+
+    .page-item.disabled .page-link:hover {
+        transform: none;
+        background: var(--gray-100);
+        color: var(--gray-400);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--gray-500);
+    }
+
+    .empty-state .icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+    }
+
+    .cta-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow);
+        border: none;
+    }
+
+    .cta-button:hover {
+        background: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        color: white;
+        text-decoration: none;
+    }
+    .section-title-small { color: #1e40af; 
+        font-size: 1.35rem; 
+        font-weight: 600; 
+        margin-bottom: 25px; 
+        padding-bottom: 10px; 
+        border-bottom: 1px solid #e5e7eb; 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 1rem;
+        }
+
+        .page-header {
+            padding: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+        }
+
+        .modern-table {
+            font-size: 0.8rem;
+            min-width: 900px;
+        }
+
+        .modern-table th,
+        .modern-table td {
+            padding: 0.75rem 1rem;
+        }
+
+        .description-cell, .ai-summary-cell {
+            max-width: 250px;
+            min-width: 250px;
+        }
+
+        .attachment-link {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .action-btn {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.375rem;
+        }
+    }
+</style>
+</head>
+
+<body>
+<div class="main-content">
+    {% include 'sidebar.html' %}
+    <div class="content-container">
+
+     <!-- Enhanced Header 
+    <div class="page-header">
+        <h1>📋 My Submitted Tasks</h1>
+        <p>Track and manage all your submitted work items</p>
+    </div>
+
+    Stats Cards 
+    <div class="stats-cards">
+        <div class="stat-card total">
+            <div class="icon">📊</div>
+            <div class="value">{{ submitted_tasks|length if submitted_tasks else 0 }}</div>
+            <div class="label">Total Tasks</div>
+        </div>
+        <div class="stat-card pending">
+            <div class="icon">⏳</div>
+            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'Pending')|list|length if submitted_tasks else 0 }}</div>
+            <div class="label">Pending</div>
+        </div>
+        <div class="stat-card completed">
+            <div class="icon">✅</div>
+            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'Completed')|list|length if submitted_tasks else 0 }}</div>
+            <div class="label">Completed</div>
+        </div>
+        <div class="stat-card in-progress">
+            <div class="icon">🚀</div>
+            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'In Progress')|list|length if submitted_tasks else 0 }}</div>
+            <div class="label">In Progress</div>
+        </div>
+    </div>-->
+
+    <!-- Main Content Card -->
+    <div class="main-card">
+        {% if submitted_tasks %}
+        <div class="section-title-small">
+            <i class="fas fa-inbox"></i>
+            All Submitted Tasks
+        </div>
+        
+        <div class="table-container">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 150px;">🏗️ Project</th>
+                        <th style="min-width: 250px;">📝 Description</th>
+                        <th style="min-width: 120px;">📅 Submitted</th>
+                        <th style="min-width: 100px;">🔄 Status</th>
+                        <th style="min-width: 120px;">📎 Attachment</th>
+                        <th style="min-width: 450px;">🤖 AI Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in submitted_tasks %}
+                    <tr>
+                        <td style="vertical-align: top;">
+                            <div class="project-name">{{ task.project_name or 'Untitled Project' }}</div>
+                        </td>
+                        
+                        <td class="description-cell" style="vertical-align: top;">
+    {% set full_description = (task.task_description or 'No description provided')|striptags %}
+
+    {% if full_description|length > 100 %}
+        <div class="description-preview collapsed" id="desc-{{ loop.index }}">
+            {{ full_description[:100] }}...
+        </div>
+        <div class="description-actions">
+            <button 
+                class="action-btn read-more-btn" 
+                data-index="{{ loop.index }}" 
+                data-full-text={{ full_description|tojson|safe }}>
+                Read more
+            </button>
+            <button 
+                class="action-btn full-view-btn" 
+                data-full-text={{ full_description|tojson|safe }}
+                data-project-name="{{ task.project_name or 'Untitled Project' }}">
+                Full view
+            </button>
+        </div>
+    {% else %}
+        <div class="description-preview">{{ full_description }}</div>
+    {% endif %}
+</td>
+
+                        
+                        <td style="vertical-align: top;">
+                            <div class="date-text">{{ task.created_at_date or '—' }}</div>
+                        </td>
+                        <td style="vertical-align: top;">
+                            {% set status_class = 'pending' %}
+                            {% if task.status == 'Completed' %}{% set status_class = 'completed' %}
+                            {% elif task.status == 'In Progress' %}{% set status_class = 'in-progress' %}
+                            {% elif task.status == 'Review' %}{% set status_class = 'review' %}
+                            {% endif %}
+                            <span class="status-badge {{ status_class }}">{{ task.status or 'Pending' }}</span>
+                        </td>
+                        <td style="vertical-align: top;">
+                            {% if task.attachment %}
+                                <a href="{{ url_for('uploaded_file', filename=task.attachment) }}" target="_blank" class="attachment-link">
+                                    📄 View
+                                </a>
+                            {% else %}
+                                <span style="color: var(--gray-400); font-size: 0.875rem;">No attachment</span>
+                            {% endif %}
+                        </td>
+                        <td class="ai-summary-cell" style="vertical-align: top;">
+                            {% set full_summary = task.ai_summary or 'No summary available' %}
+                            {% if full_summary|length > 100 %}
+                                <div class="ai-summary">
+                                    <div class="description-preview collapsed" id="ai-summary-{{ loop.index }}">{{ full_summary[:100] }}...</div>
+                                    <div class="description-actions">
+                                        <button class="action-btn ai-read-more-btn" data-index="{{ loop.index }}" data-full-text={{ full_summary|tojson|safe }}>Read more</button>
+                                        <button class="action-btn ai-full-view-btn" data-full-text={{ full_summary|tojson|safe }} data-project-name="{{ task.project_name or 'Untitled Project' }}">Full view</button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="ai-summary">{{ full_summary }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Enhanced Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination-container">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for(endpoint, page=current_page - 1) }}">
+                            ‹
+                        </a>
+                    </li>
+                    {% set window = 2 %}
+                    {% set show_dots = false %}
+                    {% for page_num in range(1, total_pages + 1) %}
+                        {% if page_num == 1 or page_num == total_pages or (page_num >= current_page - window and page_num <= current_page + window) %}
+                            <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for(endpoint, page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% set show_dots = false %}
+                        {% elif not show_dots %}
+                            <li class="page-item disabled"><span class="page-link">⋯</span></li>
+                            {% set show_dots = true %}
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for(endpoint, page=current_page + 1) }}">
+                            ›
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Enhanced Empty State -->
+        <div class="empty-state">
+            <div class="icon">📝</div>
+            <h3>No tasks submitted yet</h3>
+            <p>Start building your productivity by submitting your first task!</p>
+            <a href="#" class="cta-button">
+                ➕ Add New Task
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bootstrap Modal for Full Description -->
+<div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="descriptionModalLabel">📝 Full Task Description</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent" style="white-space: pre-wrap; line-height: 1.7;">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const descriptionModalEl = document.getElementById('descriptionModal');
+        const descriptionModal = new bootstrap.Modal(descriptionModalEl);
+        const modalTitle = document.getElementById('descriptionModalLabel');
+        const modalContent = document.getElementById('modalContent');
+
+        // Event delegation for all action buttons
+        document.body.addEventListener('click', function(event) {
+            
+            const button = event.target;
+            
+            // Handle Description "Read more"
+            if (button.classList.contains('read-more-btn')) {
+                const index = button.dataset.index;
+                const fullText = button.dataset.fullText;
+                const descElement = document.getElementById(`desc-${index}`);
+                
+                if (button.textContent === 'Read more') {
+                    descElement.classList.remove('collapsed');
+                    descElement.textContent = fullText;
+                    button.textContent = 'Read less';
+                    button.style.color = '#ef4444';
+                } else {
+                    descElement.classList.add('collapsed');
+                    descElement.textContent = fullText.substring(0, 100) + '...';
+                    button.textContent = 'Read more';
+                    button.style.color = 'var(--primary-color)';
+                }
+            }
+
+            // Handle Description "Full view"
+            if (button.classList.contains('full-view-btn')) {
+                const fullText = button.dataset.fullText;
+                const projectName = button.dataset.projectName;
+                
+                modalTitle.textContent = `📝 ${projectName} - Full Description`;
+                modalContent.textContent = fullText;
+                descriptionModal.show();
+            }
+
+            // Handle AI Summary "Read more"
+            if (button.classList.contains('ai-read-more-btn')) {
+                const index = button.dataset.index;
+                const fullText = button.dataset.fullText;
+                const summaryElement = document.getElementById(`ai-summary-${index}`);
+                
+                if (button.textContent === 'Read more') {
+                    summaryElement.classList.remove('collapsed');
+                    summaryElement.textContent = fullText;
+                    button.textContent = 'Read less';
+                    button.style.color = '#ef4444';
+                } else {
+                    summaryElement.classList.add('collapsed');
+                    summaryElement.textContent = fullText.substring(0, 100) + '...';
+                    button.textContent = 'Read more';
+                    button.style.color = 'var(--primary-color)';
+                }
+            }
+
+            // Handle AI Summary "Full view"
+            if (button.classList.contains('ai-full-view-btn')) {
+                const fullText = button.dataset.fullText;
+                const projectName = button.dataset.projectName;
+                
+                modalTitle.textContent = `🤖 ${projectName} - AI Summary`;
+                modalContent.textContent = fullText;
+                descriptionModal.show();
+            }
+        });
+
+        // Add loading states for pagination
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (!this.closest('.page-item').classList.contains('disabled') && 
+                    !this.closest('.page-item').classList.contains('active')) {
+                    this.style.opacity = '0.6';
+                    this.innerHTML = '⏳';
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
+

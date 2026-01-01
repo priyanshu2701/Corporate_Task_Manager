@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+env/
+tm_venv/
+.venv/
+
+# Flask
+instance/
+
+# Environment variables
+.env
+.env.*
+
+# MySQL dumps
+*.sql
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+*.zip
+

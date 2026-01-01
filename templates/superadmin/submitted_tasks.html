@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Submitted Tasks</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='./assets/css/main.css') }}" />
+    <style>
+      /* Using styles consistent with viewtasks.html and viewproject.html */
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; min-height: 100vh; }
+      .main-content { display: flex; min-height: 100vh; }
+      .form-container { flex: 1; padding: 40px; background: white; margin: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); animation: fadeIn 0.5s ease-out; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      .section-title-small { color: #1e40af; font-size: 1.35rem; font-weight: 600; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+      
+      .table-responsive {
+         overflow-x: auto; 
+         margin-top: 20px; 
+        }
+      .table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; color: #212529; }
+      .table th, .table td { padding: 12px 15px; vertical-align: middle; border-top: 1px solid #dee2e6; }
+      .table thead th { vertical-align: bottom; border-bottom: 2px solid #dee2e6; background-color: #f2f5f9; color: #495057; font-weight: 600; text-align: left; }
+      
+      /* --- MODIFICATION: BOLD FIRST COLUMN --- */
+      .table thead th:first-child,
+      .table tbody td:first-child {
+          font-weight: bold;
+      }
+
+      .table-hover tbody tr:hover { background-color: #f0f8ff; }
+      .no-tasks { text-align: center; padding: 30px; color: #6c757d; font-size: 1.1rem; background-color: #fdfdfd; border-radius: 10px; border: 1px dashed #e9ecef; }
+      .filter-form { margin-bottom: 20px; display: flex; gap: 1rem; align-items: center; }
+      .form-select { 
+        width: 100%; 
+        max-width: 300px; 
+        padding: 10px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: all 0.3s ease; background: white; outline: none; }
+      .form-select:focus { border-color: #2563eb; 
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
+    }
+      .btn { 
+        display: inline-flex; 
+        align-items: center; 
+        gap: 0.5rem; 
+        padding: 8px 16px; 
+        font-size: 0.875rem; 
+        font-weight: 600; 
+        text-align: center; 
+        text-decoration: none; 
+        border: none; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        transition: all 0.3s ease; 
+    }
+      .btn-primary {
+         background: linear-gradient(135deg, #2563eb, #1d4ed8); 
+         color: white; 
+         box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3); 
+        }
+
+      .btn-primary:hover { 
+        transform: translateY(-1px); 
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); 
+    }
+
+      .btn-secondary { 
+        background-color: #6c757d; 
+        color: white;
+     }
+
+      .btn-secondary:hover { background-color: #5a6268; 
+        transform: translateY(-1px); 
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
+     }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        {% include 'sidebar.html' %}
+        <div class="form-container">
+            <div class="section-title-small">
+                <i class="fas fa-inbox"></i>
+                Submitted Tasks by Employees
+            </div>
+
+            <!-- Project Filter Form -->
+            <form method="GET" class="filter-form">
+                <select name="project_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">Filter by Project</option>
+                    {% for project in projects %}
+                        <option value="{{ project.id }}" {% if project.id == selected_project %}selected{% endif %}>
+                            {{ project.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ url_for('admin_submitted_tasks' if session['user_role'] == 'head' else 'superadmin_submitted_tasks') }}" class="btn btn-secondary">Clear</a>
+            </form>
+
+            {% if submitted_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Employee</th>
+                            <th>Task Name</th>
+                            <th>Submitted On</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Attachment</th>
+                            <th>AI Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in submitted_tasks %}
+                        <tr>
+                            <td>{{ task.project_name or 'N/A' }}</td>
+                            <td>{{ task.employee_name }}</td>
+                            <td>{{ task.task_name or 'N/A' }}</td>
+                            <td>{{ task.submitted_date }}</td>
+                            <td>{{ task.status }}</td>
+                            <td>{{ task.task_description|safe }}</td>
+                            <td>
+                                {% if task.attachment %}
+                                <a href="{{ url_for('uploaded_file', filename=task.attachment) }}" target="_blank">View</a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                            <td>{{ task.ai_summary or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-tasks">
+                <p>No submitted tasks found for the selected criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

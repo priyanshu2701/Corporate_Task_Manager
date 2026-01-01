@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ongoing Projects - {{ department }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='./assets/css/main.css') }}">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .content-container {
+        flex: 1;
+        padding: 40px;
+        background: white;
+        margin: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .section-title {
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+
+      .section-title h4 {
+        color: #1e40af;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .table-responsive {
+          overflow-x: auto; 
+          margin-top: 20px;
+      }
+
+      .table {
+          width: 100%;
+          border-collapse: collapse; 
+          color: #212529; 
+      }
+
+      .table th,
+      .table td {
+          padding: 12px 15px;
+          vertical-align: middle;
+          border-top: 1px solid #dee2e6;
+      }
+
+      .table thead th {
+          border-bottom: 2px solid #dee2e6;
+          background-color: #f2f5f9;
+          color: #495057;
+          font-weight: 600;
+          text-align: left;
+      }
+
+      .table thead th:first-child,
+      .table tbody td:first-child {
+          font-weight: bold;
+      }
+
+      .table-hover tbody tr:hover {
+          background-color: #f0f8ff;
+      }
+
+      .status-badge {
+          padding: 0.35em 0.8em;
+          border-radius: 50px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          border: 1px solid transparent;
+      }
+
+      .status-ongoing { background-color: #e7f5ff; color: #1c7ed6; border-color: #a5d8ff;}
+      .status-in-progress { background-color: #f3e8ff; color: #7048e8; border-color: #d0bfff;}
+      .status-pending { background-color: #fff9db; color: #f59f00; border-color: #ffec99;}
+      .status-completed { background-color: #e6fcf5; color: #2f9e44; border-color: #96f2d7;}
+      .status-blocked { background-color: #ffe3e3; color: #e03131; border-color: #ffa8a8;}
+
+      .no-projects {
+          text-align: center;
+          padding: 40px;
+          color: #6c757d;
+          font-size: 1.1rem;
+          background-color: #fdfdfd;
+          border-radius: 10px;
+          border: 1px dashed #e9ecef;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary {
+          background-color: #6c757d;
+          color: white;
+      }
+
+      .btn-secondary:hover {
+          background-color: #5a6268;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
+      }
+
+      @media (max-width: 768px) {
+        .main-content { flex-direction: column; }
+        .content-container { margin: 10px; padding: 25px 20px; }
+        .section-title h4 { font-size: 1.2rem; }
+      }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+    {% include 'sidebar.html' %}
+    <div class="content-container">
+
+        <div class="section-title">
+            <h4><i class="fas fa-project-diagram"></i> Ongoing Projects</h4>
+        </div>
+
+        {% if projects %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+
+                        {% if user_role == 'superadmin' %}
+                        <th>Department</th>
+                        <th>Project Head</th>
+                        {% endif %}
+
+                        <th>Members</th>
+                        <th>Start Date</th>
+                        <th>Deadline</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>{{ project.project_name }}</td>
+
+                        {% if user_role == 'superadmin' %}
+                        <td>{{ project.department }}</td>
+                        <td>{{ project.project_head }}</td>
+                        {% endif %}
+
+                        <td>
+                            {% if project.members %}
+                                {{ project.members }}
+                            {% else %}
+                                <span class="text-muted">No members</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ project.created_at }}</td>
+                        <td>{{ project.deadline_date }}</td>
+
+                        <td>
+                            <span class="status-badge status-{{ project.status.lower().replace(' ', '-') }}">
+                                {{ project.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="no-projects text-center">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h5 class="mb-2">No Ongoing Projects</h5>
+            <p>Everything seems smooth here!</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{% if user_role=='superadmin' %}
+            {{ url_for('superadmin_dashboard') }}
+         {% elif user_role in ['head','admin'] %}
+            {{ url_for('admin_dashboard') }}
+         {% elif user_role in ['employee','intern'] %}
+            {{ url_for('employee_dashboard') }}
+         {% endif %}"
+            class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

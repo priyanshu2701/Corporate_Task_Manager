@@ -1,0 +1,90 @@
+{% extends "employee_layout.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block head_extra %}
+<style>
+    .profile-avatar {
+        width: 120px; height: 120px; background-color: #0d6efd; color: white;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 3rem; font-weight: bold; margin: 0 auto 25px auto;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+    }
+    .password-container { position: relative; }
+    .password-toggle {
+        position: absolute; right: 15px; top: 50%;
+        transform: translateY(25%); cursor: pointer; color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">My Profile</h1>
+    <div class="row">
+        <!-- Profile Details -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="profile-avatar">{{ user.name[0]|upper if user.name else '?' }}</div>
+                    <h3>{{ user.name }}</h3>
+                    <p class="text-muted">{{ user.email }}</p>
+                    <hr>
+                    <div class="text-start">
+                        <p><strong>Role:</strong> <span class="badge bg-info text-dark">{{ user.role|capitalize }}</span></p>
+                        <p><strong>Department:</strong> {{ user.department or 'N/A' }}</p>
+                        {% if user.assigned_head_name %}
+                        <p><strong>Reporting To:</strong> {{ user.assigned_head_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="m-0 font-weight-bold text-primary">Change Password</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('employee_update_password') }}" method="POST">
+                        <div class="password-container mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            <span class="password-toggle" onclick="togglePasswordVisibility('current_password')"><i class="fas fa-eye"></i></span>
+                        </div>
+                        <div class="password-container mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                            <span class="password-toggle" onclick="togglePasswordVisibility('new_password')"><i class="fas fa-eye"></i></span>
+                        </div>
+                        <div class="password-container mb-3">
+                            <label for="confirm_new_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password" required>
+                            <span class="password-toggle" onclick="togglePasswordVisibility('confirm_new_password')"><i class="fas fa-eye"></i></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save New Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    function togglePasswordVisibility(fieldId) {
+        const passwordField = document.getElementById(fieldId);
+        const icon = passwordField.nextElementSibling.querySelector('i');
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+</script>
+{% endblock %}

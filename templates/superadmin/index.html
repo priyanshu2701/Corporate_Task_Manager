@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SuperAdmin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='./assets/css/main.css') }}"
+    />
+  </head>
+  <body class="index-page">
+    <div class="main-content">
+       {% include 'sidebar.html' %}
+    {# {% include 'superadmin/sidebar.html' %} #}
+    {# {% include 'partials/sidebar.html' %} #}
+      <div class="header">
+        <h2>
+          
+          <i class="fas fa-user-shield me-2"></i>Welcome Superadmin, {{ name }}
+        </h2>
+        <p class="subtitle">
+          <i class="fas fa-tachometer-alt"></i>
+          Overview Dashboard - Manage your projects and tasks efficiently
+        </p>
+      </div>
+
+      <!-- Main Stats Cards -->
+      <div class="dashboard-stats">
+        <div class="stat-card" onclick="toggleForms('allTasksTable', null, true)">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-clipboard-check"></i></div>
+          </div>
+          <div class="number">24</div>
+          <div class="label">Total Assigned Tasks</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            View all tasks
+          </div>
+        </div>
+
+        <div class="stat-card" onclick="toggleForms('allProjectsTable', null, true)">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-project-diagram"></i></div>
+          </div>
+          <div class="number">8</div>
+          <div class="label">Total Projects</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            View all projects
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Header -->
+      <div class="section-header">
+        <i class="fas fa-spinner icon"></i>
+        <h4>Ongoing Tasks by Department</h4>
+      </div>
+
+      <!-- Department Stats -->
+      <div class="dashboard-stats">
+        <div class="stat-card border-primary" onclick="toggleTaskDetails('Sales')">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+          </div>
+          <div class="number">6</div>
+          <div class="label">Sales Dept - In Progress</div>
+          <div class="assigned-to">Assigned to: John Smith, Sarah Johnson</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            Click to view tasks
+          </div>
+        </div>
+
+        <div class="stat-card border-info" onclick="toggleTaskDetails('Digital')">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-digital-tachograph"></i></div>
+          </div>
+          <div class="number">4</div>
+          <div class="label">Digital Dept - In Progress</div>
+          <div class="assigned-to">Assigned to: Mike Wilson, Lisa Davis</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            Click to view tasks
+          </div>
+        </div>
+
+        <div class="stat-card border-success" onclick="toggleTaskDetails('Developer')">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-code"></i></div>
+          </div>
+          <div class="number">8</div>
+          <div class="label">Developer Dept - In Progress</div>
+          <div class="assigned-to">Assigned to: Alex Chen, Emma Rodriguez</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            Click to view tasks
+          </div>
+        </div>
+
+        <div class="stat-card border-warning" onclick="toggleTaskDetails('Graphics')">
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-paint-brush"></i></div>
+          </div>
+          <div class="number">6</div>
+          <div class="label">Graphics Dept - In Progress</div>
+          <div class="assigned-to">Assigned to: David Kim, Rachel Green</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            Click to view tasks
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Task Details (Hidden by default) -->
+      <div id="departmentTaskDetails" class="hidden">
+        <div class="section-header">
+          <i class="fas fa-list-ul icon"></i>
+          <h4>Department Task Details</h4>
+        </div>
+        <div id="taskDetailsContent">
+          <!-- Task details will be loaded here -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Function to toggle forms (placeholder)
+      function toggleForms(tableId, param, show) {
+        console.log(`Toggling ${tableId} with show: ${show}`);
+        // Add your form toggle logic here
+      }
+
+      // Function to toggle task details
+      function toggleTaskDetails(department) {
+        const detailsDiv = document.getElementById('departmentTaskDetails');
+        const contentDiv = document.getElementById('taskDetailsContent');
+        
+        if (detailsDiv.classList.contains('hidden')) {
+          detailsDiv.classList.remove('hidden');
+          contentDiv.innerHTML = `
+            <div class="loading-container text-center">
+              <div class="loading"></div>
+              <p>Loading ${department} department tasks...</p>
+            </div>
+          `;
+          
+          // Simulate loading
+          setTimeout(() => {
+            contentDiv.innerHTML = `
+              <h5>${department} Department Tasks</h5>
+              <p>Task details for ${department} department would be loaded here...</p>
+              <button onclick="hideDepartmentDetails()" class="btn btn-secondary">Close</button>
+            `;
+          }, 1000);
+        } else {
+          detailsDiv.classList.add('hidden');
+        }
+      }
+
+      // Function to hide department details
+      function hideDepartmentDetails() {
+        document.getElementById('departmentTaskDetails').classList.add('hidden');
+      }
+
+      // Add smooth scrolling
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
