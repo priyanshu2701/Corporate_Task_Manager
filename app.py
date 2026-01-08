@@ -189,9 +189,9 @@ def login():
             user = cursor.fetchone()
             cursor.close()
         except Exception as e:
-            flash("Database error occurred.", 'danger')
-            print(e)
+            flash(f"Database error: {e}", 'danger')
             return render_template('index.html')
+
 
         if user:
             # ✅ SESSION
