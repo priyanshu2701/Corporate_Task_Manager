@@ -22,7 +22,7 @@ load_dotenv()
 
 # Initialize Flask application
 app = Flask(__name__, static_folder='public', static_url_path='/public')
-app.secret_key = 'shreyasecret'  # Secret key for session management
+app.secret_key = 'FLASK_SECRET_KEY'  # Secret key for session management
 
 # Session setup for Flask-Session
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -55,7 +55,7 @@ app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-print("DEBUG KEY:", OPENROUTER_API_KEY)
+
 def send_email(recipient_email, subject, body, reply_to_email=None):
     """
     Helper function to send an email using credentials from the .env file.
