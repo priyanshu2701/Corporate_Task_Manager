@@ -589,35 +589,34 @@
                     {% for task in submitted_tasks %}
                     <tr>
                         <td style="vertical-align: top;">
-                            <div class="project-name">{{ task.project_name or 'Untitled Project' }}</div>
+                            <div class="project-name">{{ task.project_name or 'N/A' }}</div>
                         </td>
                         
                         <td class="description-cell" style="vertical-align: top;">
-    {% set full_description = (task.task_description or 'No description provided')|striptags %}
+                            {% set full_description = (task.task_description or 'No description provided')|striptags %}
 
-    {% if full_description|length > 100 %}
-        <div class="description-preview collapsed" id="desc-{{ loop.index }}">
-            {{ full_description[:100] }}...
-        </div>
-        <div class="description-actions">
-            <button 
-                class="action-btn read-more-btn" 
-                data-index="{{ loop.index }}" 
-                data-full-text={{ full_description|tojson|safe }}>
-                Read more
-            </button>
-            <button 
-                class="action-btn full-view-btn" 
-                data-full-text={{ full_description|tojson|safe }}
-                data-project-name="{{ task.project_name or 'Untitled Project' }}">
-                Full view
-            </button>
-        </div>
-    {% else %}
-        <div class="description-preview">{{ full_description }}</div>
-    {% endif %}
-</td>
-
+                            {% if full_description|length > 100 %}
+                                <div class="description-preview collapsed" id="desc-{{ loop.index }}">
+                                    {{ full_description[:100] }}...
+                                </div>
+                                <div class="description-actions">
+                                    <button 
+                                        class="action-btn read-more-btn" 
+                                        data-index="{{ loop.index }}" 
+                                        data-full-text={{ full_description|tojson|safe }}>
+                                        Read more
+                                    </button>
+                                    <button 
+                                        class="action-btn full-view-btn" 
+                                        data-full-text={{ full_description|tojson|safe }}
+                                        data-project-name="{{ task.project_name or 'Untitled Project' }}">
+                                        Full view
+                                    </button>
+                                </div>
+                            {% else %}
+                                <div class="description-preview">{{ full_description }}</div>
+                            {% endif %}
+                        </td>
                         
                         <td style="vertical-align: top;">
                             <div class="date-text">{{ task.created_at_date or '—' }}</div>
@@ -698,9 +697,9 @@
             <div class="icon">📝</div>
             <h3>No tasks submitted yet</h3>
             <p>Start building your productivity by submitting your first task!</p>
-            <a href="#" class="cta-button">
+            <!-- <a href="{{ url_for('superadmin_createtask') }}" class="cta-button">
                 ➕ Add New Task
-            </a>
+            </a> -->
         </div>
         {% endif %}
     </div>

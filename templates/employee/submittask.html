@@ -1,7 +1,7 @@
 {% extends "employee_layout.html" %} {% block title %}Submit Task{% endblock %}
 {% block content %}
 <div class="container-fluid">
-  <h1 class="h3 mb-4 text-gray-800">Submiy Task</h1>
+  <h1 class="h3 mb-4 text-gray-800">Submit Task</h1>
   <div class="card">
     <div class="card-body">
       <form
@@ -68,10 +68,11 @@
         <div class="mb-3">
           <label for="status" class="form-label">Status</label>
           <select class="form-select" id="status" name="status">
-            <option value="Ongoing">Ongoing</option>
             <option value="Completed">Completed</option>
-            <option value="Pending">Pending</option>
-            <option value="Blocked">Blocked</option>
+
+                        {#<option value="Ongoing">Ongoing</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Blocked">Blocked</option>#}
           </select>
         </div>
         <div class="mb-3">

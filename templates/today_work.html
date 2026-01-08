@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Today Work</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='./assets/css/main.css') }}"
+    />
+
+    <style>
+       
+
+       
+    </style>
+</head>
+<body>
+
+<div class="work-container">
+
+    <!-- ---------- Tabs ---------- -->
+    <div class="work-tabs">
+
+        {% if session['user_role'] != 'superadmin' %}
+        <div class="work-tab active" onclick="switchTab('add')">
+            <i class="fas fa-plus-circle"></i> Add Work
+        </div>
+        {% endif %}
+
+        <div class="work-tab {% if session['user_role'] == 'superadmin' %}active{% endif %}"
+             onclick="switchTab('view')">
+            <i class="fas fa-eye"></i> View Work
+        </div>
+    </div>
+
+    <!-- ---------- Add Work Section ---------- -->
+  <div class="container">
+    {% if session['user_role'] != 'superadmin' %}
+    <div class="work-section add-work active" id="addWork">
+        <h3>What’s your plan for today?</h3>
+
+        <form id="todayWorkForm">
+            <textarea name="today_work" placeholder="Write your work for today..."></textarea>
+            <button type="submit">
+                <i class="fas fa-check"></i> Add
+            </button>
+        </form>
+
+        <div id="formMessage" style="margin-top:10px;"></div>
+    </div>
+    {% endif %}
+</div>
+
+
+    
+<!-- ---------- View Work Section ---------- -->
+<div class="work-section view-work {% if session['user_role'] == 'superadmin' %}active{% endif %}"
+     id="viewWork">
+
+    {#{% if session['user_role'] == 'superadmin' %}
+    <div class="filter-row">
+        <select id="departmentFilter">
+            <option value="">All Departments</option>
+            <option value="Sales">Sales</option>
+            <option value="Developer">Developer</option>
+            <option value="Graphics">Graphics</option>
+            <option value="Digital">Digital</option>
+        </select>
+    </div>
+    {% endif %} #}
+
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    {% if session['user_role'] in ['employee', 'intern'] %}
+                        Your Work
+                    {% else %}
+                        Employee
+                    {% endif %}
+                </th>
+                <th>Work</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% if today_works and today_works|length > 0 %}
+
+            {% for row in today_works %}
+            <tr>
+
+                <!-- 👤 EMPLOYEE / INTERN -->
+                {% if session['user_role'] in ['employee', 'intern'] %}
+                    <td>Your Work</td>
+                    <td class="work-text">{{ row.work }}</td>
+
+                <!-- 🧑‍💼 HEAD -->
+                {% elif session['user_role'] == 'head' %}
+                    <td>{{ row.employee_name }}</td>
+                    <td class="work-text">{{ row.work }}</td>
+
+                <!-- 👑 SUPERADMIN -->
+                {% elif session['user_role'] == 'superadmin' %}
+                    <td>{{ row.employee_name }} ({{ row.department }})</td>
+                    <td class="work-text">{{ row.work }}</td>
+
+                {% endif %}
+
+            </tr>
+            {% endfor %}
+
+        {% else %}
+            <tr>
+                <td colspan="2" class="empty-state">
+                    No work added for today 💤
+                </td>
+            </tr>
+        {% endif %}
+
+        </tbody>
+    </table>
+
+
+
+
+    </div>
+
+</div>
+
+
+
+
+
+</body>
+</html>

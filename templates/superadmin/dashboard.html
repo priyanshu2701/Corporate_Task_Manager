@@ -4,216 +4,289 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-  <link
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
       rel="stylesheet"
       href="{{ url_for('static', filename='./assets/css/main.css') }}"
     />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
 
     <style>
-
       .stats-cards {
-    display: flex;
-     flex-wrap: wrap;
-    
-    align-items: center;
-    gap: 2rem;
-    margin: 1rem 0 2rem 0;
-}
+        display: flex;
+        flex-wrap: wrap;
 
-.stat-card {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.6rem;
-    min-width: 200px;
-    height: 66px;
-    padding: 25px 2.25rem;
-    border-radius: 999px;
-    background: #ffffff;
-    border: 1px solid var(--gray-200);
-    cursor: pointer;
-    font-size: 1rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    transition: all 0.25s ease;
-}
+        align-items: center;
+        gap: 2rem;
+        margin: 1rem 0 2rem 0;
+      }
 
-.stat-card .value {
-    background: #f1f5f9;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-}
+      .stat-card {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.6rem;
+        min-width: 200px;
+        height: 66px;
+        padding: 25px 2.25rem;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid var(--gray-200);
+        cursor: pointer;
+        font-size: 1rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        transition: all 0.25s ease;
+      }
 
-/* Label */
-.stat-card .label {
-    font-weight: 600;
-    
-    font-size: 1.1rem;
-    color: var(--text-secondary);
-    font-weight: 600;
-    margin-bottom: 0.1rem;
-}
+      .stat-card .value {
+        background: #f1f5f9;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+      }
 
-/* Hover */
-.stat-card:hover {
-    background: #f9fafb;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-}
+      /* Label */
+      .stat-card .label {
+        font-weight: 600;
 
-/* Active */
-.stat-card.active {
-    background: #eef2ff;
-    border-color: #1d4ed8;
-}
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        margin-bottom: 0.1rem;
+      }
 
-.stat-card.active .value,
-.stat-card.active .label {
-    color: #1d4ed8;
-}
+      /* Hover */
+      .stat-card:hover {
+        background: #f9fafb;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+      }
 
-/* Status accent */
-.stat-card.pending {
-    border-left: 4px solid #f59e0b;
-}
+      /* Active */
+      .stat-card.active {
+        background: #eef2ff;
+        border-color: #1d4ed8;
+      }
 
-.stat-card.completed {
-    border-left: 4px solid #10b981;
-}
+      .stat-card.active .value,
+      .stat-card.active .label {
+        color: #1d4ed8;
+      }
 
-.stat-card.ongoing {
-    border-left: 4px solid #3b82f6;
-}
+      /* Status accent */
+      .stat-card.pending {
+        border-left: 4px solid #f59e0b;
+      }
 
-.stat-card.ongoingProjects{
+      .stat-card.completed {
+        border-left: 4px solid #10b981;
+      }
+
+      .stat-card.ongoing {
+        border-left: 4px solid #3b82f6;
+      }
+
+      .stat-card.ongoingProjects {
         border-left: 4px solid #e41515ff;
-
-
-}
+      }
       /* Styles for the flash messages to appear as notifications */
       .flash-messages {
-          position: fixed;
-          top: 20px;
-          left: 50%; /* Center horizontally */
-          transform: translateX(-50%); /* Adjust for exact centering */
-          z-index: 1050; /* Ensure it's above other content */
-          display: flex;
-          flex-direction: column; /* Stack multiple messages vertically */
-          gap: 10px; /* Space between messages */
-          align-items: center; /* Center items within the flex container */
-          width: 100%; /* Take full width to allow centering */
-          max-width: 400px; /* Limit overall width of the notification area */
+        position: fixed;
+        top: 20px;
+        left: 50%; /* Center horizontally */
+        transform: translateX(-50%); /* Adjust for exact centering */
+        z-index: 1050; /* Ensure it's above other content */
+        display: flex;
+        flex-direction: column; /* Stack multiple messages vertically */
+        gap: 10px; /* Space between messages */
+        align-items: center; /* Center items within the flex container */
+        width: 100%; /* Take full width to allow centering */
+        max-width: 400px; /* Limit overall width of the notification area */
       }
 
       .flash-messages .alert {
-          min-width: 280px; /* Slightly wider */
-          max-width: 90%; /* Responsive width for smaller screens */
-          padding: 15px 20px;
-          border-radius: 0.375rem; /* Standard Bootstrap border-radius (approx 6px) */
-          box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Standard Bootstrap shadow */
-          opacity: 1;
-          transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Smooth transition for fade out and slide */
-          transform: translateY(0); /* Initial position */
+        min-width: 280px; /* Slightly wider */
+        max-width: 90%; /* Responsive width for smaller screens */
+        padding: 15px 20px;
+        border-radius: 0.375rem; /* Standard Bootstrap border-radius (approx 6px) */
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Standard Bootstrap shadow */
+        opacity: 1;
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Smooth transition for fade out and slide */
+        transform: translateY(0); /* Initial position */
       }
 
       /* Specific background and text colors for different alert categories (Bootstrap defaults) */
       .flash-messages .alert-success {
-          color: #155724; /* Dark green text */
-          background-color: #d4edda; /* Light green background */
-          border-color: #c3e6cb; /* Green border */
+        color: #155724; /* Dark green text */
+        background-color: #d4edda; /* Light green background */
+        border-color: #c3e6cb; /* Green border */
       }
       .flash-messages .alert-danger {
-          color: #721c24; /* Dark red text */
-          background-color: #f8d7da; /* Light red background */
-          border-color: #f5c6cb; /* Red border */
+        color: #721c24; /* Dark red text */
+        background-color: #f8d7da; /* Light red background */
+        border-color: #f5c6cb; /* Red border */
       }
       .flash-messages .alert-info {
-          color: #0c5460; /* Dark blue text */
-          background-color: #d1ecf1; /* Light blue background */
-          border-color: #bee5eb; /* Blue border */
+        color: #0c5460; /* Dark blue text */
+        background-color: #d1ecf1; /* Light blue background */
+        border-color: #bee5eb; /* Blue border */
       }
       .flash-messages .alert-warning {
-          color: #856404; /* Dark yellow text */
-          background-color: #fff3cd; /* Light yellow background */
-          border-color: #ffeeba; /* Yellow border */
+        color: #856404; /* Dark yellow text */
+        background-color: #fff3cd; /* Light yellow background */
+        border-color: #ffeeba; /* Yellow border */
       }
-
 
       /* When Bootstrap's .fade.show is removed and .fade is active, it should transition out */
       .flash-messages .alert.fade:not(.show) {
-          opacity: 0;
-          transform: translateY(-20px); /* Fade out and slightly move up */
+        opacity: 0;
+        transform: translateY(-20px); /* Fade out and slightly move up */
       }
 
       /* Ensure the close button is styled nicely within the notification */
       .flash-messages .alert .btn-close {
-          font-size: 0.9rem;
-          padding: 0.5rem;
-          margin: -0.5rem -0.5rem -0.5rem auto; /* Adjust position */
+        font-size: 0.9rem;
+        padding: 0.5rem;
+        margin: -0.5rem -0.5rem -0.5rem auto; /* Adjust position */
       }
 
       @media (max-width: 768px) {
-    .stat-card {
-        min-width: auto;
-        padding: 0.6rem 1rem;
-        height: auto;
-        font-size: 0.9rem;
-    }
+        .stat-card {
+          min-width: auto;
+          padding: 0.6rem 1rem;
+          height: auto;
+          font-size: 0.9rem;
+        }
 
-    .stat-card .label {
-        font-size: 0.95rem;
-    }
-      .project-table {
-        margin-top: 1rem;
-    }
-}
+        .stat-card .label {
+          font-size: 0.95rem;
+        }
+        .project-table {
+          margin-top: 1rem;
+        }
+      }
 
-.stat-card.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
+      .stat-card.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
 
-@media (max-width: 768px) {
-    .table th,
-    .table td {
-        white-space: nowrap;
-        font-size: 0.85rem;
-    }
-}
+      @media (max-width: 768px) {
+        .table th,
+        .table td {
+          white-space: nowrap;
+          font-size: 0.85rem;
+        }
+      }
 
+      .inline-divider {
+        width: 5px;
+        height: 80px;
+        background: linear-gradient(
+          to right,
+          transparent,
+          #6c757d,
+          transparent
+        );
+        margin: 0 12px;
+        align-self: center;
+      }
 
+      .stat-card.weekly-report {
+        gap: 0.8rem;
+      }
 
+      .stat-card.weekly-report i {
+        font-size: 1.2rem;
+      }
 
+      .stat-card.weekly-report.head {
+        background: #ecfeff;
+        border-color: #06b6d4;
+      }
+
+      .stat-card.weekly-report.head .label,
+      .stat-card.weekly-report.head i {
+        color: #0e7490;
+      }
+
+      .stat-card.weekly-report.head:hover {
+        background: #cffafe;
+      }
+
+      .stat-card.weekly-report.superadmin {
+        background: #fefce8;
+        border-color: #facc15;
+      }
+
+      .stat-card.weekly-report.superadmin .label,
+      .stat-card.weekly-report.superadmin i {
+        color: #a16207;
+      }
+
+      .stat-card.weekly-report.superadmin:hover {
+        background: #fef9c3;
+      }
     </style>
   </head>
   <body>
     <div class="main-content">
-       {% include 'sidebar.html' %}
-    
+      {% include 'sidebar.html' %}
+
       <div class="header">
-                {# Display Flash Messages #}
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flash-messages">
-              {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                  {{ message }}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
-        <h2>
-          
-          <i class="fas fa-user-shield me-2"></i>Welcome {{ session['user_role'] | capitalize }}, {{ name }}
-        </h2>
-        
+        {# Display Flash Messages #} {% with messages =
+        get_flashed_messages(with_categories=true) %} {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+          <div
+            class="alert alert-{{ category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"
+            ></button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+        <!-- Header Content -->
+        <div class="header-content">
+          <h2>
+            <i class="fas fa-user-shield me-2"></i>
+            Welcome {{ session['user_role'] | capitalize }}, {{
+            session['username'] }}
+          </h2>
+
+          <!-- Today Work Button -->
+          <button class="today-work-btn" onclick="openTodayWorkModal()">
+            <i class="fas fa-bullseye"></i>
+            <span>Today Work</span>
+
+            {% if today_work_count > 0 %}
+            <span class="notif-badge">{{ today_work_count }}</span>
+            {% endif %}
+          </button>
+        </div>
       </div>
 
       <!-- Main Stats Cards -->
-      {#<div class="dashboard-stats">
-        <a href="{{ url_for('superadmin_viewtasks') if session['user_role'] == 'superadmin' else url_for('admin_viewtasks') }}" class="stat-card" style="text-decoration: none; color: inherit;">
+      {#
+      <div class="dashboard-stats">
+        <a
+          href="{{ url_for('superadmin_viewtasks') if session['user_role'] == 'superadmin' else url_for('admin_viewtasks') }}"
+          class="stat-card"
+          style="text-decoration: none; color: inherit"
+        >
           <div class="stat-card-header">
             <div class="icon"><i class="fas fa-clipboard-check"></i></div>
           </div>
@@ -225,7 +298,11 @@
           </div>
         </a>
 
-        <a href="{{ url_for('superadmin_viewprojects') if session['user_role'] == 'superadmin' else url_for('admin_viewprojects') }}" class="stat-card" style="text-decoration: none; color: inherit;">
+        <a
+          href="{{ url_for('superadmin_viewprojects') if session['user_role'] == 'superadmin' else url_for('admin_viewprojects') }}"
+          class="stat-card"
+          style="text-decoration: none; color: inherit"
+        >
           <div class="stat-card-header">
             <div class="icon"><i class="fas fa-project-diagram"></i></div>
           </div>
@@ -238,765 +315,885 @@
         </a>
 
         {% if session['user_role'] == 'superadmin' %}
-        <a href="{{ url_for('superadmin_weekly_report') }}" class="stat-card" style="text-decoration: none; color: inherit;">
-    <div class="stat-card-header">
-        <div class="icon"><i class="fas fa-calendar-week"></i></div>
-    </div>
-    <div class="label">Weekly Report</div>
-    <div class="click-hint">
-        <i class="fas fa-eye"></i>
-        View weekly summaries
-    </div>
-</a>
-   {% elif session['user_role'] == 'head' %}
-   <a href="{{ url_for('admin_weekly_report') }}" class="stat-card" style="text-decoration: none; color: inherit;">
-    <div class="stat-card-header">
-        <div class="icon"><i class="fas fa-calendar-week"></i></div>
-    </div>
-    <div class="label">Weekly Report</div>
-    <div class="click-hint">
-        <i class="fas fa-eye"></i>
-        View weekly summaries
-    </div>
-</a>
+        <a
+          href="{{ url_for('superadmin_weekly_report') }}"
+          class="stat-card"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-calendar-week"></i></div>
+          </div>
+          <div class="label">Weekly Report</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            View weekly summaries
+          </div>
+        </a>
+        {% elif session['user_role'] == 'head' %}
+        <a
+          href="{{ url_for('admin_weekly_report') }}"
+          class="stat-card"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="stat-card-header">
+            <div class="icon"><i class="fas fa-calendar-week"></i></div>
+          </div>
+          <div class="label">Weekly Report</div>
+          <div class="click-hint">
+            <i class="fas fa-eye"></i>
+            View weekly summaries
+          </div>
+        </a>
 
-{% endif %}
-
-
-      </div>#}
-    {% if session['user_role']=='superadmin' %}
+        {% endif %}
+      </div>
+      #} {% if session['user_role']=='superadmin' %}
 
       <div class="stats-cards" id="departmentButtons">
+        <button
+          class="stat-card active"
+          onclick="showDepartment('sales', this)"
+        >
+          <span class="label">Sales</span>
+        </button>
 
-    <button class="stat-card active" onclick="showDepartment('sales', this)">
-      
-        <span class="label">Sales</span>
-    </button>
+        <button class="stat-card" onclick="showDepartment('developer', this)">
+          <span class="label">Developer</span>
+        </button>
 
-    <button class="stat-card" onclick="showDepartment('developer', this)">
-        <span class="label">Developer</span>
-    </button>
+        <button class="stat-card" onclick="showDepartment('graphics', this)">
+          <span class="label">Graphics</span>
+        </button>
 
-    <button class="stat-card" onclick="showDepartment('graphics', this)">
-        <span class="label">Graphics</span>
-    </button>
+        <button class="stat-card" onclick="showDepartment('digital', this)">
+          <span class="label">Digital</span>
+        </button>
 
-    <button class="stat-card" onclick="showDepartment('digital', this)">
-        <span class="label">Digital</span>
-    </button>
+        <!-- INLINE DIVIDER -->
+        <div class="inline-divider"></div>
+        <!-- Superadmin Weekly Report -->
+        <button
+          class="stat-card weekly-report superadmin"
+          onclick="openWeeklyReport(this)"
+        >
+          <i class="fas fa-calendar-week"></i>
+          <span class="label">Weekly Report</span>
+        </button>
+      </div>
 
-</div>
-{% endif %}
+      <!-- Divider -->
 
-<!-- SALES -->
-{% if user_role == 'superadmin' or department == 'sales' %}
-<div class="department-section
-   {% if user_role == 'admin' and department == 'sales' %}
-        active
-    {% endif %}
-" id="sales"
->
-    <h4>Sales Department</h4>
+      {% endif %} {% if session['user_role'] == 'head' %}
 
-    <!-- project status buttons  -->
+      <div class="stats-cards" id="headButtons">
+        <button
+          class="stat-card active"
+          onclick="showHeadSection('tasks', this)"
+        >
+          <span class="label">Tasks</span>
+        </button>
 
-    <div class="stats-cards project-filters">
+        <button class="stat-card" onclick="showHeadSection('projects', this)">
+          <span class="label">Projects</span>
+        </button>
 
-    <button class="stat-card ongoing active"
-       onclick="showProjectTable('sales', 'ongoing', this)">
-          <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Sales')
-               | selectattr('status', 'equalto', 'Ongoing')
-               | list
-               | length }}
-        </span>
-        <span class="label">Ongoing</span>
-    </button>
+        <!-- INLINE DIVIDER -->
+        <div class="inline-divider"></div>
 
-    <button class="stat-card pending"
-            onclick="showProjectTable('sales', 'pending', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Sales')
-               | selectattr('status', 'equalto', 'Pending')
-               | list
-               | length }}
-        </span>
-        <span class="label">Pending</span>
-    </button>
+        <!-- Head Weekly Report -->
+        <button
+          class="stat-card weekly-report head"
+          onclick="openWeeklyReport(this)"
+        >
+          <i class="fas fa-calendar-alt"></i>
+          <span class="label">Weekly Report</span>
+        </button>
+      </div>
 
-    <button class="stat-card completed"
-            onclick="showProjectTable('sales', 'completed', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Sales')
-               | selectattr('status', 'equalto', 'Completed')
-               | list
-               | length }}
-        </span>
-        <span class="label">Completed</span>
-    </button>
+      {% endif %}
 
-</div>
+      <!-- <button class="stat-card" onclick="openWeeklyReport(this)">
+    <span class="label">Weekly Report</span>
+</button> -->
 
-<!-- Projects Tables-->
+      <!-- SALES -->
+      <div
+        id="projects-section"
+        class="head-main-section {% if session['user_role'] == 'superadmin' %}active{% endif %}"
+      >
+        {% if user_role == 'superadmin' or (user_role == 'head' and department
+        == 'sales') %}
+        <div
+          class="department-section {% if user_role == 'head' and department == 'sales' %} active {% endif %}"
+          id="sales"
+        >
+          <h4>Sales Department</h4>
 
-<!-- ONGOING PROJECTS for sales -->
-<div class="project-table" id="sales-ongoing">
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
+          <!-- project status buttons  -->
+
+          <div class="stats-cards project-filters">
+            <button
+              class="stat-card ongoing active"
+              onclick="showProjectTable('sales', 'ongoing', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Sales') |
+                selectattr('status', 'equalto', 'Ongoing') | list | length }}
+              </span>
+              <span class="label">Ongoing</span>
+            </button>
+
+            <button
+              class="stat-card pending"
+              onclick="showProjectTable('sales', 'pending', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Sales') |
+                selectattr('status', 'equalto', 'Pending') | list | length }}
+              </span>
+              <span class="label">Pending</span>
+            </button>
+
+            <button
+              class="stat-card completed"
+              onclick="showProjectTable('sales', 'completed', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Sales') |
+                selectattr('status', 'equalto', 'Completed') | list | length }}
+              </span>
+              <span class="label">Completed</span>
+            </button>
+          </div>
+
+          <!-- Projects Tables-->
+
+          <!-- ONGOING PROJECTS for sales -->
+          <div class="project-table" id="sales-ongoing">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
                     <th>Project Name</th>
                     <th>Members</th>
                     <th>Start Date</th>
                     <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set ongoing_projects = sales_projects | selectattr('status',
+                'equalto', 'Ongoing') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  %}
+                  <tr
+                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% endif %}"
+                  >
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d/%m/%Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Ongoing Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                </tr>
-            </thead>
-            {% set ongoing_projects =
-                sales_projects
-                | selectattr('status', 'equalto', 'Ongoing')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                    {% if ongoing_projects %}
-                    {% for project in ongoing_projects %}
-                    <tr>
-                        <td>{{ project.project_name }}</td>
-                        <td>{{ project.members or 'No members' }}</td>
-                        <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                        <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted">
-                            No Ongoing Projects
-                        </td>
-                    </tr>
-                {% endif %}
-
-                                
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- PENDING PROJECTS for sales -->
-                <div class="project-table d-none" id="sales-pending">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Project Name</th>
-                                    <th>Members</th>
-                                    <th>Start Date</th>
-                                    <th>Deadline Date</th>
-
-                                </tr>
-                    </thead>
-                        {% set ongoing_projects =
-                                sales_projects
-                                | selectattr('status', 'equalto', 'Pending')
-                                | list
-                            %}
-                    <tbody>
-                                <!-- Jinja loop later -->
-                    {% if ongoing_projects %}
-                    {% for project in ongoing_projects %}
-                    <tr>
-                        <td>{{ project.project_name }}</td>
-                        <td>{{ project.members or 'No members' }}</td>
-                        <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                        <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted">
-                            No Pending Projects
-                        </td>
-                    </tr>
-                {% endif %}
-                
-            </tbody>
-        </table>
-    </div>
-  </div>
-
-<!-- COMPLETED PROJECTS for sales -->
-<div class="project-table d-none" id="sales-completed">
- <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
+          <!-- PENDING PROJECTS for sales -->
+          <div class="project-table d-none" id="sales-pending">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
                     <th>Project Name</th>
                     <th>Members</th>
                     <th>Start Date</th>
                     <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set ongoing_projects = sales_projects | selectattr('status',
+                'equalto', 'Pending') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Pending Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                </tr>
-            </thead>
-           {% set completed_projects =
-                sales_projects
-                | selectattr('status', 'equalto', 'Completed')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-    {% if completed_projects %}
-    {% for project in completed_projects %}
-    <tr>
-        <td>{{ project.project_name }}</td>
-        <td>{{ project.members or 'No members' }}</td>
-        <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-        <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-    </tr>
-    {% endfor %}
-{% else %}
-    <tr>
-        <td colspan="4" class="text-center text-muted">
-            No Completed Projects
-        </td>
-    </tr>
-{% endif %}
-                
-            </tbody>
-        </table>
-    </div></div>
-</div>
+          <!-- COMPLETED PROJECTS for sales -->
+          <div class="project-table d-none" id="sales-completed">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project Name</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set completed_projects = sales_projects |
+                selectattr('status', 'equalto', 'Completed') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if completed_projects %} {% for project in
+                  completed_projects %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Completed Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-{% endif %}
+        {% endif %}
 
-<!-- DEVELOPER -->
-{% if user_role == 'superadmin' or department == 'developer' %}
-<div class="department-section " id="developer">
-    <h4>Developer Department</h4>
+        <!-- DEVELOPER -->
+        {% if user_role == 'superadmin' or (user_role == 'head' and department
+        == 'developer') %}
+        <div class="department-section head-section d-none" id="developer">
+          <h4>Developer Department</h4>
 
-    <div class="stats-cards project-filters">
+          <div class="stats-cards project-filters">
+            <button
+              class="stat-card ongoing active"
+              onclick="showProjectTable('developer', 'ongoing', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Developer') |
+                selectattr('status', 'equalto', 'Ongoing') | list | length }}
+              </span>
+              <span class="label">Ongoing</span>
+            </button>
 
-    <button class="stat-card ongoing active"
-       onclick="showProjectTable('developer', 'ongoing', this)">
-          <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Developer')
-               | selectattr('status', 'equalto', 'Ongoing')
-               | list
-               | length }}
-        </span>
-        <span class="label">Ongoing</span>
-    </button>
+            <button
+              class="stat-card pending"
+              onclick="showProjectTable('developer', 'pending', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Developer') |
+                selectattr('status', 'equalto', 'Pending') | list | length }}
+              </span>
+              <span class="label">Pending</span>
+            </button>
 
-    <button class="stat-card pending"
-            onclick="showProjectTable('developer', 'pending', this)">
+            <button
+              class="stat-card completed"
+              onclick="showProjectTable('developer', 'completed', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Developer') |
+                selectattr('status', 'equalto', 'Completed') | list | length }}
+              </span>
+              <span class="label">Completed</span>
+            </button>
+          </div>
+
+          <!-- PROJECTS  Section for Developer -->
+          <div class="project-table" id="developer-ongoing">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set ongoing_projects = developer_projects |
+                selectattr('status', 'equalto', 'Ongoing') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  %}
+                  <tr
+                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% endif %}"
+                  >
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d/%m/%Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Ongoing Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PENDING PROJECTS for Developers -->
+          <div class="project-table d-none" id="developer-pending">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set pending_projects = developer_projects |
+                selectattr('status', 'equalto', 'Pending') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if pending_projects %} {% for project in pending_projects
+                  %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Pending Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- COMPLETED PROJECTS for Developers -->
+          <div class="project-table d-none" id="developer-completed">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                    <th>Completed On</th>
+                  </tr>
+                </thead>
+
+                {% set completed_projects = developer_projects |
+                selectattr('status', 'equalto', 'Completed') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if completed_projects %} {% for project in
+                  completed_projects %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.completed_date or '—' }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Completed Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- GRAPHICS -->
+        {% if user_role == 'superadmin' or (user_role == 'head' and department
+        == 'graphics') %}
+        <div class="department-section d-none" id="graphics">
+          <h4>Graphics Department</h4>
+
+          <div class="stats-cards project-filters">
+            <button
+              class="stat-card ongoing active"
+              onclick="showProjectTable('graphics', 'ongoing', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Graphics') |
+                selectattr('status', 'equalto', 'Ongoing') | list | length }}
+              </span>
+              <span class="label">Ongoing</span>
+            </button>
+
+            <button
+              class="stat-card pending"
+              onclick="showProjectTable('graphics', 'pending', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Graphics') |
+                selectattr('status', 'equalto', 'Pending') | list | length }}
+              </span>
+              <span class="label">Pending</span>
+            </button>
+
+            <button
+              class="stat-card completed"
+              onclick="showProjectTable('graphics', 'completed', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Graphics') |
+                selectattr('status', 'equalto', 'Completed') | list | length }}
+              </span>
+              <span class="label">Completed</span>
+            </button>
+          </div>
+          <!-- Ongoing Project  Section for Gaphics -->
+          <div class="project-table" id="graphics-ongoing">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set ongoing_projects = graphics_projects |
+                selectattr('status', 'equalto', 'Ongoing') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  %}
+                  <tr
+                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% elif project.status == 'Completed' %} table-success {% endif %}"
+                  >
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d/%m/%Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Ongoing Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PENDING PROJECTS for graphics -->
+          <div class="project-table d-none" id="graphics-pending">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set pending_projects = graphics_projects |
+                selectattr('status', 'equalto', 'Pending') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if pending_projects %} {% for project in pending_projects
+                  %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Pending Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- COMPLETED PROJECTS for graphics -->
+          <div class="project-table d-none" id="graphics-completed">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set completed_projects = graphics_projects |
+                selectattr('status', 'equalto', 'Completed') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if completed_projects %} {% for project in
+                  completed_projects %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Completed Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {% endif %}
+
+        <!-- DIGITAL -->
+        {% if user_role == 'superadmin' or (user_role == 'head' and department
+        == 'digital') %}
+        <div class="department-section d-none" id="digital">
+          <h4>Digital Department</h4>
+
+          <div class="stats-cards project-filters">
+            <button
+              class="stat-card ongoing active"
+              onclick="showProjectTable('digital', 'ongoing', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Digital') |
+                selectattr('status', 'equalto', 'Ongoing') | list | length }}
+              </span>
+              <span class="label">Ongoing</span>
+            </button>
+
+            <button
+              class="stat-card pending"
+              onclick="showProjectTable('digital', 'pending', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Digital') |
+                selectattr('status', 'equalto', 'Pending') | list | length }}
+              </span>
+              <span class="label">Pending</span>
+            </button>
+
+            <button
+              class="stat-card completed"
+              onclick="showProjectTable('digital', 'completed', this)"
+            >
+              <span class="value">
+                {{ projects | selectattr('department', 'equalto', 'Digital') |
+                selectattr('status', 'equalto', 'Completed') | list | length }}
+              </span>
+              <span class="label">Completed</span>
+            </button>
+          </div>
+          <!-- Ongoing Project Section for Digital -->
+          <div class="project-table" id="digital-ongoing">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set ongoing_projects = digital_projects |
+                selectattr('status', 'equalto', 'Ongoing') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  %}
+                  <tr
+                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% elif project.status == 'Completed' %} table-success {% endif %}"
+                  >
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d/%m/%Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Ongoing Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PENDING PROJECTS for Digital -->
+          <div class="project-table d-none" id="digital-pending">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+
+                {% set pending_projects = digital_projects |
+                selectattr('status', 'equalto', 'Pending') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if pending_projects %} {% for project in pending_projects
+                  %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Pending Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- COMPLETED PROJECTS for digital -->
+          <div class="project-table d-none" id="digital-completed">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Project</th>
+                    <th>Members</th>
+                    <th>Start Date</th>
+                    <th>Deadline Date</th>
+                  </tr>
+                </thead>
+                {% set completed_projects = digital_projects |
+                selectattr('status', 'equalto', 'Completed') | list %}
+                <tbody>
+                  <!-- Jinja loop later -->
+                  {% if completed_projects %} {% for project in
+                  completed_projects %}
+                  <tr>
+                    <td>{{ project.project_name }}</td>
+                    <td>{{ project.members or 'No members' }}</td>
+                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                  </tr>
+                  {% endfor %} {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      No Completed Projects
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {% endif %}
+      </div>
+
+      {# TASKS SECTION#} {% if session['user_role'] == 'head' %}
+      <div id="tasks-section" class="head-main-section">
+        <div class="stats-cards project-filters">
+          <button
+            class="stat-card active ongoing"
+            onclick="showTaskTable('developer', 'ongoing', this)"
+          >
             <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Developer')
-               | selectattr('status', 'equalto', 'Pending')
-               | list
-               | length }}
-        </span>
-        <span class="label">Pending</span>
-    </button>
+              {{ dept_tasks | rejectattr('status', 'equalto', 'Completed') |
+              list | length }}
+            </span>
+            <span class="label">Ongoing</span>
+          </button>
 
-    <button class="stat-card completed"
-            onclick="showProjectTable('developer', 'completed', this)">
+          <button
+            class="stat-card completed"
+            onclick="showTaskTable('developer', 'completed', this)"
+          >
             <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Developer')
-               | selectattr('status', 'equalto', 'Completed')
-               | list
-               | length }}
-        </span>
-        <span class="label">Completed</span>
-    </button>
-
-</div>
-
-<!-- PROJECTS  Section for Developer -->
-<div class="project-table" id="developer-ongoing">
-    <div class="table-responsive">
-        <table class="table table-striped">
+              {{ dept_tasks | selectattr('status', 'equalto', 'Completed') |
+              list | length }}
+            </span>
+            <span class="label">Completed</span>
+          </button>
+        </div>
+        <div class="task-table" id="developer-task-ongoing">
+          <table class="table table-striped">
             <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-           {% set ongoing_projects =
-                developer_projects
-                | selectattr('status', 'equalto', 'Ongoing')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if ongoing_projects %}
-                {% for project in ongoing_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Ongoing Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- PENDING PROJECTS for Developers -->
-<div class="project-table d-none" id="developer-pending">
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-            {% set pending_projects =
-                sales_projects
-                | selectattr('status', 'equalto', 'Pending')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if pending_projects %}
-                {% for project in pending_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Pending Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- COMPLETED PROJECTS for Developers -->
-<div class="project-table d-none" id="developer-completed">
-<div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
+              <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Assigned To</th>
+                <th>Start Date</th>
+                <th>Deadline</th>
+              </tr>
             </thead>
 
-            {% set completed_projects =
-                developer_projects
-                | selectattr('status', 'equalto', 'Completed')
-                | list
-            %}
+            {% set ongoing_tasks = dept_tasks | rejectattr('status', 'equalto',
+            'Completed') | list %}
+
             <tbody>
-                <!-- Jinja loop later -->
-                {% if completed_projects %}
-                {% for project in completed_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Completed Projects
-                    </td>
-                </tr>
-            {% endif %}
+              {% if ongoing_tasks %} {% for task in ongoing_tasks %}
+              <tr
+                class="{% if task.due_date and task.due_date < today and task.status != 'Completed' %} table-danger {% endif %}"
+              >
+                <td>{{ task.task_name }}</td>
+                <td>{{ task.project_name or '—' }}</td>
+                <td>{{ task.assigned_to or task.assigned_to_email }}</td>
+                <td>{{ task.created_at.strftime('%d %b %Y') }}</td>
+                <td>
+                  {{ task.due_date.strftime('%d/%m/%Y') if
+                  task.due_date else '—' }} {% if task.due_date
+                  and task.due_date < today and task.status !=
+                  'Completed' %}
+                  <span class="badge bg-danger ms-2">Overdue</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">
+                  No Ongoing Tasks
+                </td>
+              </tr>
+              {% endif %}
             </tbody>
-        </table>
-    </div></div>
+          </table>
+        </div>
 
-</div>
-{% endif %}
-
-<!-- GRAPHICS -->
-<div class="department-section d-none" id="graphics">
-    <h4>Graphics Department</h4>
-
-    <div class="stats-cards project-filters">
-
-    <button class="stat-card ongoing active"
-       onclick="showProjectTable('graphics', 'ongoing', this)">
-          <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Graphics')
-               | selectattr('status', 'equalto', 'Ongoing')
-               | list
-               | length }}
-        </span>
-        <span class="label">Ongoing</span>
-    </button>
-
-    <button class="stat-card pending"
-            onclick="showProjectTable('graphics', 'pending', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Graphics')
-               | selectattr('status', 'equalto', 'Pending')
-               | list
-               | length }}
-        </span>
-        <span class="label">Pending</span>
-    </button>
-
-    <button class="stat-card completed"
-            onclick="showProjectTable('graphics', 'completed', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Graphics')
-               | selectattr('status', 'equalto', 'Completed')
-               | list
-               | length }}
-        </span>
-        <span class="label">Completed</span>
-    </button>
-  </div>
-    <!-- Ongoing Project  Section for Gaphics -->
-<div class="project-table" id="graphics-ongoing">
-    <div class="table-responsive">
-        <table class="table table-striped">
+        <div class="task-table d-none" id="developer-task-completed">
+          <table class="table table-striped">
             <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-            {% set ongoing_projects =
-                graphics_projects
-                | selectattr('status', 'equalto', 'Ongoing')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if ongoing_projects %}
-                {% for project in ongoing_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Ongoing Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- PENDING PROJECTS for graphics -->
-<div class="project-table d-none" id="graphics-pending">
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-            {% set pending_projects =
-                graphics_projects
-                | selectattr('status', 'equalto', 'Pending')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if pending_projects %}
-                {% for project in pending_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Pending Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- COMPLETED PROJECTS for graphics -->
-<div class="project-table d-none" id="graphics-completed">
-<div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-            {% set completed_projects =
-                graphics_projects
-                | selectattr('status', 'equalto', 'Completed')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if completed_projects %}
-                {% for project in completed_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Completed Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-  </div>
-
-</div>
-
-
-<!-- DIGITAL -->
-<div class="department-section d-none" id="digital">
-    <h4>Digital Department</h4>
-
-    <div class="stats-cards project-filters">
-
-    <button class="stat-card ongoing active"
-       onclick="showProjectTable('digital', 'ongoing', this)">
-          <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Digital')
-               | selectattr('status', 'equalto', 'Ongoing')
-               | list
-               | length }}
-        </span>
-        <span class="label">Ongoing</span>
-    </button>
-
-    <button class="stat-card pending"
-            onclick="showProjectTable('digital', 'pending', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Digital')
-               | selectattr('status', 'equalto', 'Pending')
-               | list
-               | length }}
-        </span>
-        <span class="label">Pending</span>
-    </button>
-
-    <button class="stat-card completed"
-            onclick="showProjectTable('digital', 'completed', this)">
-            <span class="value">
-            {{ projects
-               | selectattr('department', 'equalto', 'Digital')
-               | selectattr('status', 'equalto', 'Completed')
-               | list
-               | length }}
-        </span>
-        <span class="label">Completed</span>
-    </button>
-  </div>
-    <!-- Ongoing Project Section for Digital -->
-<div class="project-table" id="digital-ongoing">
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
-            </thead>
-             {% set ongoing_projects =
-                digital_projects
-                | selectattr('status', 'equalto', 'Ongoing')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if ongoing_projects %}
-                {% for project in ongoing_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Ongoing Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- PENDING PROJECTS for Digital -->
-<div class="project-table d-none" id="digital-pending">
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
-
-                </tr>
+              <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Assigned To</th>
+                <th>Start Date</th>
+                <th>Deadline</th>
+                <th>Completed On</th>
+              </tr>
             </thead>
 
-            {% set pending_projects =
-                digital_projects
-                | selectattr('status', 'equalto', 'Pending')
-                | list
-            %}
+            {% set completed_tasks = dept_tasks | selectattr('status',
+            'equalto', 'Completed') | list %}
+
             <tbody>
-                <!-- Jinja loop later -->
-                {% if pending_projects %}
-                {% for project in pending_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Pending Projects
-                    </td>
-                </tr>
-            {% endif %}
+              {% if completed_tasks %} {% for task in completed_tasks %}
+              <tr>
+                <td>{{ task.task_name }}</td>
+                <td>{{ task.project_name or '—' }}</td>
+                <td>{{ task.assigned_to or task.assigned_to_email }}</td>
+                <td>{{ task.created_at.strftime('%d %b %Y') }}</td>
+                <td>
+                  {{ task.due_date.strftime('%d %b %Y') if task.due_date else
+                  '—' }}
+                </td>
+                <td>
+                  {{ task.completed_date.strftime('%d %b %Y') if
+                  task.completed_date else '—' }}
+                </td>
+              </tr>
+              {% endfor %} {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">
+                  No Completed Tasks
+                </td>
+              </tr>
+              {% endif %}
             </tbody>
-        </table>
-    </div>
-</div>
+          </table>
+        </div>
+      </div>
+      {% endif %}
 
-<!-- COMPLETED PROJECTS for digital -->
-<div class="project-table d-none" id="digital-completed">
-<div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Members</th>
-                    <th>Start Date</th>
-                    <th>Deadline Date</th>
+      <!--Department Wise buttons -->
 
-                </tr>
-            </thead>
-            {% set completed_projects =
-                digital_projects
-                | selectattr('status', 'equalto', 'Completed')
-                | list
-            %}
-            <tbody>
-                <!-- Jinja loop later -->
-                {% if completed_projects %}
-                {% for project in completed_projects %}
-                <tr>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.members or 'No members' }}</td>
-                    <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No Completed Projects
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
-        </table>
-    </div></div>
-
-</div>
-</div>
-
-
-
-<!--Department Wise buttons -->
-
-
-
-
-
-
-
-
-
-
-
-
-{# <!--Ongoing Project Section --> 
+      {#
+      <!--Ongoing Project Section -->
 
       <!-- Section Header -->
-{% if session['user_role'] == 'superadmin' %}
+      {% if session['user_role'] == 'superadmin' %}
       <div class="section-header">
         <i class="fas fa-spinner icon"></i>
         <h4>Projects by Department</h4>
@@ -1004,54 +1201,52 @@
 
       <!-- 🔹 Ongoing Projects by Department -->
 
-<div class="dashboard-stats mt-4">
-  {% for dept, data, color in [
-    ('Sales', sales_projects, 'primary'),
-    ('Digital', digital_projects, 'info'),
-    ('Developer', developer_projects, 'success'),
-    ('Graphics', graphics_projects, 'warning')
-  ] %}
-  <a href="{{ url_for('superadmin_ongoing_projects', department=dept) }}"
-     class="stat-card border border-{{ color }}"
-     style="text-decoration: none; color: inherit;">
-    <div class="icon"><i class="fas fa-project-diagram"></i></div>
-    <div class="number">{{ data.count if data.count else 0 }}</div>
-    <div class="label">{{ dept }} Dept - Ongoing Projects</div>
-    {% if data.project_names %}
-      <small>Projects: {{ data.project_names }}</small>
-    {% else %}
-      <small>No ongoing projects.</small>
-    {% endif %}
-    <small style="color: #007bff; font-weight: 600;">Click to view projects</small>
-  </a>
-  {% endfor %}
-</div>
+      <div class="dashboard-stats mt-4">
+        {% for dept, data, color in [ ('Sales', sales_projects, 'primary'),
+        ('Digital', digital_projects, 'info'), ('Developer', developer_projects,
+        'success'), ('Graphics', graphics_projects, 'warning') ] %}
+        <a
+          href="{{ url_for('superadmin_ongoing_projects', department=dept) }}"
+          class="stat-card border border-{{ color }}"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="icon"><i class="fas fa-project-diagram"></i></div>
+          <div class="number">{{ data.count if data.count else 0 }}</div>
+          <div class="label">{{ dept }} Dept - Ongoing Projects</div>
+          {% if data.project_names %}
+          <small>Projects: {{ data.project_names }}</small>
+          {% else %}
+          <small>No ongoing projects.</small>
+          {% endif %}
+          <small style="color: #007bff; font-weight: 600"
+            >Click to view projects</small
+          >
+        </a>
+        {% endfor %}
+      </div>
 
-<!-- ADMIN VIEW -->
-{% elif session['user_role'] == 'head' %}
+      <!-- ADMIN VIEW -->
+      {% elif session['user_role'] == 'head' %}
 
-<div class="section-header">
-    <i class="fas fa-project-diagram icon"></i>
-    <h4>Ongoing Projects</h4>
-</div>
+      <div class="section-header">
+        <i class="fas fa-project-diagram icon"></i>
+        <h4>Ongoing Projects</h4>
+      </div>
 
-<div class="dashboard-stats mt-4">
-    <a href="{{ url_for('admin_ongoing_projects') }}"
-       class="stat-card border border-primary"
-       style="text-decoration: none; color: inherit;">
-       
-      <div class="icon"><i class="fas fa-spinner"></i></div>
-      <div class="number">{{ total_ongoing if total_ongoing else 0 }}</div>
-      <div class="label">Ongoing Projects</div>
-      <small>Click to view</small>
-    </a>
-</div>
+      <div class="dashboard-stats mt-4">
+        <a
+          href="{{ url_for('admin_ongoing_projects') }}"
+          class="stat-card border border-primary"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="icon"><i class="fas fa-spinner"></i></div>
+          <div class="number">{{ total_ongoing if total_ongoing else 0 }}</div>
+          <div class="label">Ongoing Projects</div>
+          <small>Click to view</small>
+        </a>
+      </div>
 
-{% endif %}
-
-
-
-
+      {% endif %}
 
       <!-- Section Header -->
       <div class="section-header">
@@ -1060,117 +1255,352 @@
       </div>
 
       <!-- Department Stats -->
-       <div class="dashboard-stats">
-          {# MODIFICATION: Conditional display based on user role 
-          {% if session['user_role'] == 'superadmin' %}
-              {% for dept, data, color in [ ('Sales', sales_ongoing, 'primary'),
-              ('Digital', digital_ongoing, 'info'), ('Developer', developer_ongoing,
-              'success'), ('Graphics', graphics_ongoing, 'warning') ] %}
-              <a href="{{ url_for('superadmin_ongoing_tasks', department=dept) }}" class="stat-card border border-{{ color }}" style="text-decoration: none; color: inherit;">
-                <div class="icon"><i class="fas fa-building"></i></div>
-                <div class="number">
-                  {{ data.count if data.count is not none else 0 }}
-                </div>
-                <div class="label">{{ dept }} Dept - In Progress</div>
-                {% if data.assigned_names %}
-                <small>Assigned to: {{ data.assigned_names }}</small>
-                {% else %}
-                <small>No tasks assigned.</small>
-                {% endif %}
-                <small style="color: #007bff; font-weight: 600"
-                  >Click to view tasks</small
-                >
-              </a>
-              {% endfor %}
-          {% elif session['user_role'] == 'head' %}
-              <a href="{{ url_for('superadmin_ongoing_tasks', department=department) }}" class="stat-card border border-primary" style="text-decoration: none; color: inherit;">
-                <div class="icon"><i class="fas fa-building"></i></div>
-                <div class="number">
-                  {{ department_ongoing.count if department_ongoing.count is not none else 0 }}
-                </div>
-                <div class="label">{{ department }} Dept - In Progress</div>
-                {% if department_ongoing.assigned_names %}
-                <small>Assigned to: {{ department_ongoing.assigned_names }}</small>
-                {% else %}
-                <small>No tasks assigned.</small>
-                {% endif %}
-                <small style="color: #007bff; font-weight: 600"
-                  >Click to view tasks</small
-                >
-              </a>
+      <div class="dashboard-stats">
+        {# MODIFICATION: Conditional display based on user role {% if
+        session['user_role'] == 'superadmin' %} {% for dept, data, color in [
+        ('Sales', sales_ongoing, 'primary'), ('Digital', digital_ongoing,
+        'info'), ('Developer', developer_ongoing, 'success'), ('Graphics',
+        graphics_ongoing, 'warning') ] %}
+        <a
+          href="{{ url_for('superadmin_ongoing_tasks', department=dept) }}"
+          class="stat-card border border-{{ color }}"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="icon"><i class="fas fa-building"></i></div>
+          <div class="number">
+            {{ data.count if data.count is not none else 0 }}
+          </div>
+          <div class="label">{{ dept }} Dept - In Progress</div>
+          {% if data.assigned_names %}
+          <small>Assigned to: {{ data.assigned_names }}</small>
+          {% else %}
+          <small>No tasks assigned.</small>
           {% endif %}
-        </div>
-    </div> #}
+          <small style="color: #007bff; font-weight: 600"
+            >Click to view tasks</small
+          >
+        </a>
+        {% endfor %} {% elif session['user_role'] == 'head' %}
+        <a
+          href="{{ url_for('superadmin_ongoing_tasks', department=department) }}"
+          class="stat-card border border-primary"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="icon"><i class="fas fa-building"></i></div>
+          <div class="number">
+            {{ department_ongoing.count if department_ongoing.count is not none
+            else 0 }}
+          </div>
+          <div class="label">{{ department }} Dept - In Progress</div>
+          {% if department_ongoing.assigned_names %}
+          <small>Assigned to: {{ department_ongoing.assigned_names }}</small>
+          {% else %}
+          <small>No tasks assigned.</small>
+          {% endif %}
+          <small style="color: #007bff; font-weight: 600"
+            >Click to view tasks</small
+          >
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    #}
 
-     <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap JS Bundle -->
+
+    <!-- Today Work Modal -->
+    <div id="todayWorkModal" class="modal-overlay">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeTodayWorkModal()">
+          &times;
+        </button>
+
+        <div id="todayWorkContent">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-function showDepartment(deptId, btn) {
+    <script>
+      function showDepartment(deptId, btn) {
+        document
+          .querySelectorAll(".department-section")
+          .forEach((section) => section.classList.add("d-none"));
 
-    document.querySelectorAll('.department-section')
-        .forEach(section => section.classList.add('d-none'));
+        document.getElementById(deptId).classList.remove("d-none");
 
-    document.getElementById(deptId).classList.remove('d-none');
+        document
+          .querySelectorAll("#departmentButtons .stat-card")
+          .forEach((button) => button.classList.remove("active"));
 
-    document.querySelectorAll('#departmentButtons .stat-card')
-        .forEach(button => button.classList.remove('active'));
+        btn.classList.add("active");
+      }
 
-    btn.classList.add('active');
-}
+      function showTaskTable(dept, status, btn) {
+        document
+          .querySelectorAll(".task-table")
+          .forEach((t) => t.classList.add("d-none"));
 
-function showProjectTable(department, status, btn) {
+        document
+          .getElementById(`${dept}-task-${status}`)
+          .classList.remove("d-none");
 
-    document.querySelectorAll(`#${department} .project-table`)
-        .forEach(table => table.classList.add('d-none'));
+        btn.parentElement
+          .querySelectorAll(".stat-card")
+          .forEach((b) => b.classList.remove("active"));
 
-    document.getElementById(`${department}-${status}`)
-        .classList.remove('d-none');
+        btn.classList.add("active");
+      }
 
-    btn.closest('.project-filters')
-        .querySelectorAll('.stat-card')
-        .forEach(b => b.classList.remove('active'));
+      function showHeadSection(sectionId, btn) {
+        // Safety: superadmin should not use this
+        if ("{{ session['user_role'] }}" !== "head") return;
 
-    btn.classList.add('active');
-}
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
+        document
+          .querySelectorAll(".head-main-section")
+          .forEach((sec) => sec.classList.add("d-none"));
 
-    // flash auto dismiss
-    document.querySelectorAll('.alert').forEach(msg => {
-        setTimeout(() => {
-            const bsAlert =
-                bootstrap.Alert.getInstance(msg) || new bootstrap.Alert(msg);
-            bsAlert.close();
-        }, 3000);
-    });
+        document
+          .querySelectorAll(".project-table, .task-table")
+          .forEach((t) => t.classList.add("d-none"));
 
-    // default department logic
-    {% if user_role == 'superadmin' %}
-        const defaultDept = 'sales';
-    {% else %}
-        const defaultDept = '{{ department|lower }}';
-    {% endif %}
+        document
+          .querySelectorAll("#headButtons .stat-card")
+          .forEach((b) => b.classList.remove("active"));
 
-    document.querySelectorAll('.department-section')
-        .forEach(section => section.classList.add('d-none'));
+        btn.classList.add("active");
 
-    const deptSection = document.getElementById(defaultDept);
-    if (deptSection) {
-        deptSection.classList.remove('d-none');
-
-        const firstBtn = deptSection.querySelector(
-            '.project-filters .stat-card.ongoing'
-        );
-        if (firstBtn) {
-            showProjectTable(defaultDept, 'ongoing', firstBtn);
+        if (sectionId === "tasks") {
+          document.getElementById("tasks-section")?.classList.remove("d-none");
+          document
+            .getElementById("developer-task-ongoing")
+            ?.classList.remove("d-none");
         }
-    }
-});
-</script>
 
+        if (sectionId === "projects") {
+          document
+            .getElementById("projects-section")
+            ?.classList.remove("d-none");
 
+          const dept = "{{ department|lower }}";
+          document.getElementById(dept)?.classList.remove("d-none");
+          document
+            .getElementById(`${dept}-ongoing`)
+            ?.classList.remove("d-none");
+        }
+      }
+
+      function showProjectTable(department, status, btn) {
+        document
+          .querySelectorAll(`#${department} .project-table`)
+          .forEach((table) => table.classList.add("d-none"));
+
+        document
+          .getElementById(`${department}-${status}`)
+          .classList.remove("d-none");
+
+        btn
+          .closest(".project-filters")
+          .querySelectorAll(".stat-card")
+          .forEach((b) => b.classList.remove("active"));
+
+        btn.classList.add("active");
+      }
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+
+          {% if session['user_role'] == 'superadmin' %}
+              const defaultDept = 'sales';
+          {% else %}
+              const defaultDept = '{{ department|lower }}';
+          {% endif %}
+
+          /* ===============================
+             SUPERADMIN UI SETUP
+          =============================== */
+          {% if session['user_role'] == 'superadmin' %}
+              document.querySelector('.department-section')
+                  ?.classList.remove('d-none');
+
+              document.getElementById('projects-section')
+                  ?.classList.remove('d-none');
+
+              document.getElementById(defaultDept)
+                  ?.classList.remove('d-none');
+
+              document.getElementById(`${defaultDept}-ongoing`)
+                  ?.classList.remove('d-none');
+          {% endif %}
+
+          /* ===============================
+             HEAD DEFAULT SECTION
+          =============================== */
+          {% if session['user_role'] == 'head' %}
+              showHeadSection(
+                  'tasks',
+                  document.querySelector('#headButtons .stat-card')
+              );
+          {% endif %}
+
+          /* ===============================
+             DEPARTMENT VISIBILITY RESET
+          =============================== */
+          document.querySelectorAll('.department-section')
+              .forEach(section => section.classList.add('d-none'));
+
+          const deptSection = document.getElementById(defaultDept);
+          if (deptSection) {
+              deptSection.classList.remove('d-none');
+
+              const firstBtn = deptSection.querySelector(
+                  '.project-filters .stat-card.ongoing'
+              );
+              if (firstBtn) {
+                  showProjectTable(defaultDept, 'ongoing', firstBtn);
+              }
+          }
+
+          /* ===============================
+             FLASH AUTO DISMISS
+          =============================== */
+          document.querySelectorAll('.alert').forEach(msg => {
+              setTimeout(() => {
+                  const bsAlert =
+                      bootstrap.Alert.getInstance(msg) || new bootstrap.Alert(msg);
+                  bsAlert.close();
+              }, 3000);
+          });
+
+      });
+    </script>
+
+    <script>
+      function openWeeklyReport(btn) {
+        // optional: remove active from department buttons
+        document
+          .querySelectorAll("#departmentButtons .stat-card")
+          .forEach((b) => b.classList.remove("active"));
+
+        btn.classList.add("active");
+
+        // redirect to your existing route
+        window.location.href = "/superadmin/weekly_report";
+      }
+    </script>
+
+    <script>
+      // After loading the modal content
+      function attachTodayWorkFormHandler() {
+        const form = document.getElementById("todayWorkForm");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault(); // stop page reload
+
+          const workText = form.today_work.value.trim();
+          const messageDiv = document.getElementById("formMessage");
+
+          if (!workText) {
+            messageDiv.innerText = "Work cannot be empty!";
+            return;
+          }
+
+          fetch("{{ url_for('today_work') }}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: JSON.stringify({ today_work: workText }),
+          })
+            .then((res) => res.json())
+
+            .then((data) => {
+              messageDiv.innerText = data.message;
+
+              if (data.status === "success") {
+                form.reset();
+
+                // Switch to View tab
+
+                // Reload only the View Work section
+                fetch("{{ url_for('today_work') }}")
+                  .then((res) => res.text())
+                  .then((html) => {
+                    const temp = document.createElement("div");
+                    temp.innerHTML = html;
+
+                    const newViewWork = temp.querySelector("#viewWork");
+                    const currentViewWork = document.querySelector("#viewWork");
+
+                    if (newViewWork && currentViewWork) {
+                      currentViewWork.innerHTML = newViewWork.innerHTML;
+                    }
+                  });
+              }
+            })
+
+            .catch((err) => {
+              console.error(err);
+              messageDiv.innerText = "Something went wrong!";
+            });
+        });
+      }
+
+      // Call this after fetching modal content
+      function openTodayWorkModal() {
+        const modal = document.getElementById("todayWorkModal");
+        const content = document.getElementById("todayWorkContent");
+
+        modal.style.display = "flex";
+        content.innerHTML = '<div class="loading">Loading...</div>';
+
+        fetch("{{ url_for('today_work') }}")
+          .then((res) => res.text())
+          .then((html) => {
+            const temp = document.createElement("div");
+            temp.innerHTML = html;
+            const workContainer = temp.querySelector(".work-container");
+
+            content.innerHTML = "";
+            content.appendChild(workContainer);
+
+            // Attach AJAX handler after content is loaded
+            attachTodayWorkFormHandler();
+          });
+      }
+
+      function closeTodayWorkModal() {
+        document.getElementById("todayWorkModal").style.display = "none";
+      }
+    </script>
+
+    {# JS for tab switch from add work to view work #}
+    <script>
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".work-tab")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".work-section")
+          .forEach((s) => s.classList.remove("active"));
+
+        if (tab === "add") {
+          document
+            .querySelector(".work-tab:first-child")
+            .classList.add("active");
+          document.getElementById("addWork").classList.add("active");
+        } else {
+          document.querySelectorAll(".work-tab").forEach((t) => {
+            if (t.innerText.includes("View")) t.classList.add("active");
+          });
+          document.getElementById("viewWork").classList.add("active");
+        }
+      }
+    </script>
 
     <!-- Bootstrap JS Bundle -->
   </body>

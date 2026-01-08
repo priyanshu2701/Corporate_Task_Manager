@@ -27,4 +27,5 @@ instance/
 Thumbs.db
 
 *.zip
+flask_session/
 

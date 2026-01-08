@@ -359,7 +359,7 @@
               <select name="role" class="form-select" required id="userRoleSelect">
                 <option value="">Select Role</option>
                 {% if session['user_role'] == 'superadmin' %}
-                <option value="admin">Admin</option>
+                <option value="head">Head</option>
                 {% endif %}
                 <option value="employee">Employee</option>
                 <option value="intern">Intern</option>
@@ -384,13 +384,13 @@
                 {% endif %}
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Assigned Head (Optional)</label>
+              <label class="form-label" >Assigned Head </label>
                 {% if session['user_role'] == 'head' %}
                     <!-- If user is an Admin, show their name as the fixed Assigned Head -->
                     <input type="text" class="form-control" value="{{ session['username'] }}" disabled>
                 {% else %}
                     <!-- If user is a Superadmin, show the dropdown to select a head -->
-                    <select name="assigned_head" class="form-select" id="assignedHeadSelect">
+                    <select name="assigned_head" class="form-select" id="assignedHeadSelect" required>
                     <option value="">Select Assigned Head</option>
                     {% for user in all_users %}
                     {% if user.id != session['user_id'] %}
@@ -477,5 +477,30 @@
         });
       });
     </script>
+
+    <script>
+  const roleSelect = document.getElementById("userRoleSelect");
+  const assignedHeadSelect = document.getElementById("assignedHeadSelect");
+
+  function toggleAssignedHead() {
+    const selectedRole = roleSelect.value;
+
+    if (selectedRole === "head") {
+      assignedHeadSelect.disabled = true;
+      assignedHeadSelect.required = false;
+      assignedHeadSelect.value = "";
+    } else {
+      assignedHeadSelect.disabled = false;
+      assignedHeadSelect.required = true;
+    }
+  }
+
+  // Run on role change
+  roleSelect.addEventListener("change", toggleAssignedHead);
+
+  // Run on page load (important for edit / refresh cases)
+  toggleAssignedHead();
+</script>
+
   </body>
 </html>

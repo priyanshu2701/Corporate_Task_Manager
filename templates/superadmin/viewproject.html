@@ -406,15 +406,15 @@
             <i class="fas fa-project-diagram me-2"></i>All Projects
           </h4>
              <form name="status_filter_form" class="status-filter-form mb-3 d-flex justify-content-end" method="Get">
-  <div class="d-flex align-items-center gap-2">
-    <label for="status_filter" class="fw-semibold me-2">Filter by Status:</label>
-    <select name="status" id="status_filter" class="form-select status-filter-select" style="width: 200px;" onchange="this.form.submit()">
-      <option value="">All Projects</option>
-      <option value="Ongoing" {% if request.args.get('status') == 'Ongoing' %}selected{% endif %}>Ongoing</option>
-      <option value="Completed" {% if request.args.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
-    </select>
-  </div>
-</form>
+              <div class="d-flex align-items-center gap-2">
+                <label for="status_filter" class="fw-semibold me-2">Filter by Status:</label>
+                <select name="status" id="status_filter" class="form-select status-filter-select" style="width: 200px;" onchange="this.form.submit()">
+                  <option value="">All Projects</option>
+                  <option value="Ongoing" {% if request.args.get('status') == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+                  <option value="Completed" {% if request.args.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
+                </select>
+              </div>
+            </form>
           {% if projects %}
           <div class="table-responsive mt-3">
             <table class="table table-bordered table-hover">
@@ -463,16 +463,14 @@
                               "{{ project.project_head_id }}",
                               "{{ project.created_at_raw }}",
                               "{{ project.deadline_date_raw }}",
-                              "{{ project.status }}",
+                              "{{ project.status }}", 
                               {{ project.member_ids_list | tojson }}
                           )'>
                           <i class="fas fa-edit"></i> Edit
                       </button>
-
-
-                        <button class="btn btn-sm btn-danger" onclick="deleteProject('{{ project.id }}')">
-                            <i class="fas fa-trash-alt"></i> Delete
-                        </button>
+                      <button class="btn btn-sm btn-danger" onclick="deleteProject('{{ project.id }}')">
+                        <i class="fas fa-trash-alt"></i> Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -520,9 +518,28 @@
           </div>
           <div class="row">
             <div class="col-md-4 mb-3">
-            <label class="form-label">Project Members</label>
+              <label class="form-label">Department</label>
+              <input type="text" class="form-control" id="editProjectDepartment" disabled/>
+              <!-- Hidden field to actually submit -->
+              <input type="hidden" name="department" id="editProjectDepartmentHidden">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Project Head</label>
+              <select class="form-select" id="editProjectHead" disabled>
+                {% for admin in admins %}
+                  <option value="{{ admin.id }}">
+                    {{ admin.name }} ({{ admin.email }})
+                  </option>
+                {% endfor %}
+              </select>
+              <!-- Hidden field -->
+              <input type="hidden" name="project_head_id" id="editProjectHeadHidden">
+            </div>
 
-            <select name="project_member_ids" class="form-select" id="editprojectMembers" multiple required>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Project Members</label>
+
+              <select name="project_member_ids" class="form-select" id="editprojectMembers" multiple required>
                 {% for member in members %}
                     {% set is_busy = member.id|string in busy_members %}
                     <option 
@@ -534,30 +551,9 @@
                         {% if is_busy %} - Busy {% else %} - Free {% endif %}
                     </option>
                 {% endfor %}
-            </select>
-
-            <small class="text-muted">Hold CTRL to select multiple members.</small>
-        </div>
+              </select>
+            </div>
              
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Department</label>
-              <select name="department" class="form-select" required id="editProjectDepartment">
-                <option value="">Select Department</option>
-                <option value="Digital">Digital</option>
-                <option value="Graphics">Graphics</option>
-                <option value="Sales">Sales</option>
-                <option value="Developer">Developer</option>
-              </select>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Project Head (Admin Only)</label>
-              <select name="project_head_id" class="form-select" required id="editProjectHead">
-                <option value="">Select Project Head</option>
-                {% for admin in admins %}
-                <option value="{{ admin.id }}" data-department="{{ admin.department }}">{{ admin.name }} ({{ admin.email }})</option>
-                {% endfor %}
-              </select>
-            </div>
           </div>
           
           <div class="row">
@@ -609,6 +605,10 @@
     let currentPage = 1;
 
     document.addEventListener('DOMContentLoaded', function() {
+
+
+
+
 
       
         // Sidebar toggle functionality
@@ -759,7 +759,9 @@ function editProject(
     document.getElementById('editProjectName').value = name;
     document.getElementById('editProjectDescription').value = description;
     document.getElementById('editProjectDepartment').value = department;
+    document.getElementById('editProjectDepartmentHidden').value = department;
     document.getElementById('editProjectHead').value = projectHeadId;
+    document.getElementById('editProjectHeadHidden').value = projectHeadId;
     document.getElementById('editProjectStartDate').value = startDate;
     document.getElementById('editProjectDeadlineDate').value = deadlineDate;
     document.getElementById('editProjectStatus').value = status;
@@ -783,6 +785,27 @@ function editProject(
     // Show edit form
     document.getElementById('allProjectsTable').style.display = 'none';
     document.getElementById('editProjectFormContent').style.display = 'block';
+
+    const startInput = document.getElementById('editProjectStartDate');
+const deadlineInput = document.getElementById('editProjectDeadlineDate');
+
+// Set min deadline immediately when edit form opens
+deadlineInput.min = startDate;
+
+// If existing deadline is invalid, fix it
+if (deadlineInput.value && deadlineInput.value < startDate) {
+    deadlineInput.value = startDate;
+}
+
+// Update min whenever start date changes
+startInput.onchange = function () {
+    deadlineInput.min = this.value;
+
+    if (deadlineInput.value < this.value) {
+        deadlineInput.value = this.value;
+    }
+};
+
 }
 
 window.editProject = editProject;

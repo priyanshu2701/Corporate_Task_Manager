@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ongoing Projects - {{ department }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='./assets/css/main.css') }}">
     <style>
       * {
@@ -176,9 +178,15 @@
 
                 <tbody>
                     {% for project in projects %}
-                    <tr>
+                    <tr class="
+                        {% if project.deadline_date 
+                            and project.deadline_date < today 
+                            and project.status != 'Completed' %}
+                            table-danger
+                        {% endif %}
+                    ">
                         <td>{{ project.project_name }}</td>
-
+                            
                         {% if user_role == 'superadmin' %}
                         <td>{{ project.department }}</td>
                         <td>{{ project.project_head }}</td>
@@ -193,7 +201,15 @@
                         </td>
 
                         <td>{{ project.created_at }}</td>
-                        <td>{{ project.deadline_date }}</td>
+                        <td>
+                            {{ project.deadline_date }}
+
+                            {% if project.deadline_date 
+                                and project.deadline_date < today 
+                                and project.status != 'Completed' %}
+                                <span class="badge bg-danger ms-2">Overdue</span>
+                            {% endif %}
+                        </td>
 
                         <td>
                             <span class="status-badge status-{{ project.status.lower().replace(' ', '-') }}">
@@ -214,19 +230,19 @@
         </div>
         {% endif %}
 
-        <div class="mt-4">
+        <!-- <div class="mt-4">
             <a href="{% if user_role=='superadmin' %}
-            {{ url_for('superadmin_dashboard') }}
-         {% elif user_role in ['head','admin'] %}
-            {{ url_for('admin_dashboard') }}
-         {% elif user_role in ['employee','intern'] %}
-            {{ url_for('employee_dashboard') }}
-         {% endif %}"
-            class="btn btn-secondary">
+                {{ url_for('superadmin_dashboard') }}
+                {% elif user_role in ['head','admin'] %}
+                    {{ url_for('admin_dashboard') }}
+                {% elif user_role in ['employee','intern'] %}
+                    {{ url_for('employee_dashboard') }}
+                {% endif %}"
+                    class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
 
-        </div>
+        </div> -->
 
     </div>
 </div>

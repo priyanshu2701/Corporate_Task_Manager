@@ -688,6 +688,7 @@
                                             data-task-id="{{ task.id }}"
                                             data-task-name="{{ task.task_name }}"
                                             data-task-description="{{ task.task_description }}"
+                                            data-task-department="{{ task.department }}"
                                             data-task-due-date="{{ task.due_date | replace('/', '-') }}"
                                             data-task-status="{{ task.status }}"
                                             data-task-project-id="{{ task.project_id or '' }}"
@@ -772,19 +773,21 @@
                         <input name="due_date" type="date" class="form-control" id="editTaskDueDate" required>
                     </div>
                 </div>
-
                 <div class="mb-3">
                     <label for="editTaskDescription" class="form-label">Task Description</label>
                     <textarea name="task_description" class="form-control" rows="3" id="editTaskDescription"></textarea>
                 </div>
-
-                <div class="mb-3">
-                    <label for="editAssignedToName" class="form-label">Assigned To</label>
-                    <input class="form-control" id="editAssignedToName" readonly disabled>
-                    <input type="hidden" name="assigned_to_user_id" id="editAssignedToId">
-                    <small class="form-text text-muted">Task assignment cannot be changed from this form.</small>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="editTasdepart" class="form-label">Department</label>
+                        <input class="form-control" id="editTasdepart" disabled>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="editAssignedToName" class="form-label">Assigned To</label>
+                        <input class="form-control" id="editAssignedToName" readonly disabled>
+                        <input type="hidden" name="assigned_to_user_id" id="editAssignedToId">
+                    </div>
                 </div>
-
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="editTaskStatus" class="form-label">Status</label>
@@ -801,7 +804,7 @@
                         <select name="project_id" class="form-select" id="editTaskProject">
                             <option value="">Select Project</option>
                             {% for project in projects %}
-                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            <option value="{{ project.id }}" data-dept="{{ project.department }}">{{ project.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -862,18 +865,19 @@
             }, 5000);
         }
 
-        function editTask(id, name, description, dueDate, status, projectId, assignedToUserId) {
-            const dateParts = dueDate.split('/');
-            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : '';
+        function editTask(id, name, description, dueDate, status, projectId, assignedToUserId, department) {
 
             document.getElementById('editTaskId').value = id;
             document.getElementById('editTaskName').value = name;
             document.getElementById('editTaskDescription').value = description;
-            document.getElementById('editTaskDueDate').value = formattedDate;
+            document.getElementById('editTaskDueDate').value = dueDate;
             document.getElementById('editTaskStatus').value = status;
             document.getElementById('editTaskProject').value = projectId || '';
             document.getElementById('editAssignedToId').value = assignedToUserId;
+            document.getElementById('editTasdepart').value = department;
 
+            filterProjectsByDepartment(department, projectId);
+            
             fetch(`/get_user_name/${assignedToUserId}`)
                 .then(response => response.json())
                 .then(data => {
@@ -888,6 +892,8 @@
             if (editTaskModalInstance) {
                 editTaskModalInstance.show();
             }
+     
+
         }
 
         function deleteTask(taskId) {
@@ -942,10 +948,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const dueDateInput = document.querySelector('input[name="due_date"]');
-    
-            const today = new Date().toISOString().split('T')[0];
-            dueDateInput.min = today;
+           
             // Sidebar toggle functionality
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.querySelector('.sidebar');
@@ -980,7 +983,8 @@
                         data.taskDueDate,
                         data.taskStatus,
                         data.taskProjectId,
-                        data.taskAssignedToId
+                        data.taskAssignedToId,
+                        data.taskDepartment
                     );
                 });
             });
@@ -999,6 +1003,35 @@
                 showToast(message, category);
             });
         });
+    </script>
+    <script>
+    function filterProjectsByDepartment(department, selectedProjectId = '') {
+        const projectSelect = document.getElementById('editTaskProject');
+        const options = projectSelect.querySelectorAll('option');
+
+        projectSelect.value = ''; // reset
+
+        options.forEach(option => {
+            const optDept = option.dataset.dept;
+
+            // Always show "Select Project"
+            if (!optDept) {
+                option.hidden = false;
+                return;
+            }
+
+            if (optDept === department) {
+                option.hidden = false;
+            } else {
+                option.hidden = true;
+            }
+        });
+
+        // Re-select project if exists
+        if (selectedProjectId) {
+            projectSelect.value = selectedProjectId;
+        }
+    }
     </script>
   </body>
 </html>

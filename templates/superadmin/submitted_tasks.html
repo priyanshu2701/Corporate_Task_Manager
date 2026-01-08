@@ -94,8 +94,8 @@
                         </option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{{ url_for('admin_submitted_tasks' if session['user_role'] == 'head' else 'superadmin_submitted_tasks') }}" class="btn btn-secondary">Clear</a>
+                <!-- <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ url_for('admin_submitted_tasks' if session['user_role'] == 'head' else 'superadmin_submitted_tasks') }}" class="btn btn-secondary">Clear</a> -->
             </form>
 
             {% if submitted_tasks %}

@@ -1,11 +1,13 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template, request, redirect, session, flash, jsonify, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, session, flash, jsonify, make_response, url_for, send_from_directory
 from flask_mysqldb import MySQL
 from flask_session import Session
 import datetime
 import MySQLdb.cursors
+from MySQLdb.cursors import DictCursor
+
 import requests
 import os
 from datetime import timedelta
@@ -13,6 +15,7 @@ from math import ceil
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
+from datetime import date
 
 # Load environment variables from .env file
 load_dotenv()
@@ -52,7 +55,7 @@ app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-
+print("DEBUG KEY:", OPENROUTER_API_KEY)
 def send_email(recipient_email, subject, body, reply_to_email=None):
     """
     Helper function to send an email using credentials from the .env file.
@@ -83,35 +86,56 @@ def send_email(recipient_email, subject, body, reply_to_email=None):
     except Exception as e:
         print(f"Failed to send email to {recipient_email}: {e}")
 
-
 def summarize_with_openrouter(text_to_summarize):
-    """Function to get a summary from OpenRouter AI."""
     if not OPENROUTER_API_KEY:
-        print("OpenRouter API key not set. Returning original text.")
+        print("OpenRouter API key not set.")
         return "AI summary could not be generated."
 
     try:
         response = requests.post(
-            url="https://openrouter.ai/api/v1/chat/completions",
+            "https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "HTTP-Referer": "http://localhost",
+                "X-Title": "Task Summary Generator",
+                "Content-Type": "application/json"
             },
             json={
-                "model": "openai/gpt-3.5-turbo",
+                "model":  "deepseek/deepseek-r1-0528:free",
                 "messages": [
-                    {"role": "system", "content": "Summarize the following task update in a concise and professional manner."},
-                    {"role": "user", "content": text_to_summarize}
-                ]
-            }
+                    {
+                        "role": "system",
+                        "content": "Summarize the following task update in a concise and professional manner and do not add extra messages from your side as I have to submit this summary to office."
+                    },
+                    {
+                        "role": "user",
+                        "content": text_to_summarize
+                    }
+                ],
+                "temperature": 0.3
+            },
+            timeout=30
         )
-        response.raise_for_status()
-        result = response.json()
-        summary = result['choices'][0]['message']['content'].strip()
-        return summary
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling OpenRouter API: {e}")
-        return "AI summary could not be generated due to an API error."
 
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        print("Response content:", http_err.response.text)
+        return f"HTTP error: {http_err.response.text}"
+
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request error: {req_err}")
+        return f"Request error: {req_err}"
+
+    except Exception as e:
+        print("Unexpected error:", e)
+        return f"Unexpected error: {e}"
+
+
+    
 
 def allowed_file(filename):
     """
@@ -127,6 +151,9 @@ def uploaded_file(filename):
     """
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+app.secret_key = "super-secret-key-change-this"
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
 
 @app.route('/')
 def home():
@@ -141,14 +168,10 @@ def home():
 
 @app.route('/index', methods=['GET', 'POST'])
 def login():
-    """
-    Handles user login.
-    GET: Renders the login page.
-    POST: Authenticates user credentials.
-    """
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('remember')  # checkbox
 
         if not username or not password:
             flash('Please enter both username and password.', 'danger')
@@ -156,7 +179,6 @@ def login():
 
         try:
             cursor = mysql.connection.cursor()
-            # Query to find an active user with matching email and password
             cursor.execute("""
                 SELECT id, name, role, email, department
                 FROM users
@@ -165,28 +187,42 @@ def login():
             user = cursor.fetchone()
             cursor.close()
         except Exception as e:
-            flash(f"Database error: {e}", 'danger')
-            print(f"Database error during login: {e}")
+            flash("Database error occurred.", 'danger')
+            print(e)
             return render_template('index.html')
 
         if user:
-            # Set session variables upon successful login
+            # ✅ SESSION
             session['logged_in'] = True
             session['user_id'] = user['id']
             session['username'] = user['name']
-
-            # Strip whitespace and convert role to lowercase to prevent routing errors
-            user_role = user['role'].strip().lower()
-            session['user_role'] = user_role
             session['email'] = user['email']
             session['department'] = user['department']
+            session['user_role'] = user['role'].strip().lower()
 
-            flash(
-                f"Welcome, {user['name']}! You are now logged in.", 'success')
-            return redirect(url_for('dashboard', role=user_role))
-        else:
-            flash('Invalid username or password or account is inactive.', 'danger')
-            return render_template('index.html')
+            flash(f"Welcome, {user['name']}!", 'success')
+
+            # ✅ RESPONSE FOR COOKIES
+            resp = make_response(
+                redirect(url_for('dashboard', role=session['user_role']))
+            )
+
+            if remember:
+                # Store email only (safe)
+                resp.set_cookie(
+                    'remember_email',
+                    user['email'],
+                    max_age=30 * 24 * 60 * 60,  # 30 days
+                    httponly=True,
+                    samesite='Lax'
+                )
+            else:
+                resp.delete_cookie('remember_email')
+
+            return resp
+
+        flash('Invalid username or password or account is inactive.', 'danger')
+        return render_template('index.html')
 
     return render_template('index.html')
 
@@ -288,6 +324,52 @@ def get_dept_projects(cur, department):
         'project_names': result['project_names'] if result['project_names'] else ''
     }
 
+
+#get head wise project details
+def get_head_projects(cur, head_id, statuses):
+    placeholders = ','.join(['%s'] * len(statuses))
+
+    query = f"""
+        SELECT 
+            COUNT(*) AS count,
+            GROUP_CONCAT(name SEPARATOR ', ') AS project_names
+        FROM projects
+        WHERE project_head_id = %s
+          AND status IN ({placeholders})
+    """
+
+    cur.execute(query, (head_id, *statuses))
+    result = cur.fetchone()
+
+    return {
+        'count': result['count'] or 0,
+        'project_names': result['project_names'] or ''
+    }
+#get head wise task details
+def get_head_tasks(cur, head_id):
+    query = """
+        SELECT 
+            at.id,
+            at.task_name,
+            at.status,
+            at.created_at,
+            at.due_date,
+            u.name AS assigned_to,
+            p.name AS project_name,
+            st.created_at AS completed_date
+        FROM assigned_tasks at
+        JOIN projects p 
+            ON at.project_id = p.id
+        LEFT JOIN users u 
+            ON at.assigned_to_user_id = u.id
+        LEFT JOIN submitted_tasks st
+            ON st.assigned_task_id = at.id
+            AND st.status = 'Completed'
+        WHERE p.project_head_id = %s
+    """
+    cur.execute(query, (head_id,))
+    return cur.fetchall()
+
 # get data of a busy or free user
 def get_busy_user_ids(cursor):
     # Today's date
@@ -340,6 +422,33 @@ def get_dept_projects(cur, department, statuses):
     cur.execute(query, (department, tuple(statuses)))
     return cur.fetchall()
 
+#Get all task related data for head dashboard
+
+def get_dept_tasks(cur, department):
+    query = """
+        SELECT 
+            at.id,
+            at.task_name,
+            at.status,
+            at.created_at,
+            at.due_date,
+            u.name AS assigned_to,
+            p.name AS project_name,
+            st.created_at AS completed_date
+        FROM assigned_tasks at
+        LEFT JOIN users u 
+            ON at.assigned_to_user_id = u.id
+        LEFT JOIN projects p 
+            ON at.project_id = p.id
+        LEFT JOIN submitted_tasks st
+            ON st.assigned_task_id = at.id
+            AND st.status = 'Completed'
+        WHERE at.department = %s
+    """
+    cur.execute(query, (department,))
+    return cur.fetchall()
+
+
 
 
 
@@ -366,6 +475,8 @@ def superadmin_dashboard():
     if 'logged_in' not in session or session.get('user_role') != 'superadmin':
         flash('Unauthorized access. Please log in.', 'danger')
         return redirect(url_for('login'))
+    
+    today = date.today()
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM assigned_tasks")
@@ -394,6 +505,15 @@ def superadmin_dashboard():
     cur.execute("SELECT COUNT(*) as count FROM submitted_tasks")
     submitted_tasks_count = cur.fetchone()['count']
 
+    cur.execute("""
+        SELECT COUNT(DISTINCT user_id) AS count
+        FROM today_work
+        WHERE work_date = %s
+    """, (today,))
+
+    today_work_count = cur.fetchone()['count']
+    
+
 
     
     cur.close()
@@ -403,7 +523,8 @@ def superadmin_dashboard():
                            tasks=tasks,
                            projects=projects,
                            submitted_tasks_count=submitted_tasks_count,
-                      
+                           today=date.today(),
+                           today_work_count=today_work_count,
                            sales_projects=sales_projects,
                            digital_projects=digital_projects,
                            developer_projects=developer_projects,
@@ -607,7 +728,7 @@ def add_user():
 
     try:
         cursor = mysql.connection.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+        cursor.execute("SELECT id FROM users WHERE email = %s and is_active=1", (email,))
         if cursor.fetchone():
             flash(f"❌ User with email {email} already exists.", "danger")
             if session['user_role'] == 'head':
@@ -667,6 +788,21 @@ def add_project():
     try:
         cursor = mysql.connection.cursor()
 
+        # 🔍 1️⃣ CHECK DUPLICATE PROJECT (name + department)
+        cursor.execute("""
+            SELECT id FROM projects
+            WHERE name = %s AND department = %s
+        """, (project_name, department))
+
+        existing_project = cursor.fetchone()
+
+        if existing_project:
+            flash(
+                f"⚠️ Project '{project_name}' already exists in {department} department.",
+                "warning"
+            )
+            return redirect(url_for('superadmin_createproject'))
+
         # 1️⃣ Insert project
         cursor.execute("""
             INSERT INTO projects 
@@ -718,7 +854,7 @@ def superadmin_createproject():
     cursor.execute(
         "SELECT id, name, email, department FROM users WHERE (role = 'head' OR role = 'superadmin') AND is_active = TRUE")
     admins = cursor.fetchall()
-    cursor.execute("SELECT id, name, role, department FROM users WHERE role IN ('employee','intern') AND is_active=TRUE")
+    cursor.execute("SELECT id, name, role, assigned_head,department FROM users WHERE role IN ('employee','intern') AND is_active=TRUE")
 
     
     members = cursor.fetchall()
@@ -763,7 +899,7 @@ def superadmin_viewprojects():
                 FROM projects p
                 LEFT JOIN users u ON p.project_head_id = u.id
                 WHERE p.status = %s
-                ORDER BY p.created_at DESC
+                ORDER BY p.id DESC
                 LIMIT %s OFFSET %s
             """, (status_filter, per_page, offset))
         else:
@@ -773,7 +909,7 @@ def superadmin_viewprojects():
                        u.name AS project_head_name
                 FROM projects p
                 LEFT JOIN users u ON p.project_head_id = u.id
-                ORDER BY p.created_at DESC
+                ORDER BY p.id DESC
                 LIMIT %s OFFSET %s
             """, (per_page, offset))
 
@@ -902,10 +1038,9 @@ def superadmin_createtask():
 
     cur = mysql.connection.cursor()
     try:
-        cur.execute(
-            "SELECT id, name, email, department FROM users WHERE (role = 'head') AND is_active = TRUE")
+        cur.execute("SELECT id, name, email, department FROM users WHERE (role = 'head') AND is_active = TRUE")
         admins = cur.fetchall()
-        cur.execute("SELECT id, name FROM projects ORDER BY name")
+        cur.execute("SELECT id, name, department FROM projects ORDER BY name")
         projects = cur.fetchall()
     except Exception as e:
         flash(f"Error fetching data: {e}", "danger")
@@ -952,7 +1087,7 @@ def superadmin_viewtasks():
         """, (per_page, offset))
         tasks = cur.fetchall()
 
-        cur.execute("SELECT id, name FROM projects ORDER BY name")
+        cur.execute("SELECT id, name, department FROM projects ORDER BY name")
         projects = cur.fetchall()
 
         for task in tasks:
@@ -960,15 +1095,13 @@ def superadmin_viewtasks():
                 '%d/%m/%Y') if task.get('date_assigned') else 'N/A'
             task['time_assigned_formatted'] = str(
                 task['time_assigned']) if task.get('time_assigned') else 'N/A'
-            task['due_date'] = task['due_date'].strftime(
-                '%d/%m/%Y') if task.get('due_date') else 'N/A'
+            task['due_date'] = task['due_date'].strftime('%Y/%m/%d') if task.get('due_date') else ''
+
     except Exception as e:
         flash(f"Error fetching tasks: {e}", "danger")
         tasks, projects, total_pages = [], [], 1
     finally:
         cur.close()
-
-
 
 
     return render_template('superadmin/viewtasks.html',
@@ -977,28 +1110,134 @@ def superadmin_viewtasks():
                            current_page=page,
                            total_pages=total_pages,
                            endpoint='superadmin_viewtasks')
-# Weekly Report
 
 @app.route('/superadmin/weekly_report', methods=['GET'])
 def superadmin_weekly_report():
-    department_filter = request.args.get('department')
-    week_filter = request.args.get('week')
+
+    # ------------------ SESSION DATA ------------------
+    user_role = session.get('user_role')
+    user_id = session.get('user_id')
+
+    # ------------------ FILTER PARAMS ------------------
+    department = request.args.get('department')
+    head_id = request.args.get('head_id', type=int)
+    employee_id = request.args.get('employee_id', type=int)
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
 
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    # 🗓️ Step 1: Calculate the last 4 weeks (Mon-Sat)
-    today = datetime.datetime.now()
-    weeks = []
-    for i in range(4):
-        end_of_week = today - datetime.timedelta(days=today.weekday() - 5 + 7 * i)
-        start_of_week = end_of_week - datetime.timedelta(days=5)
-        weeks.append({
-            "label": f"{start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b %Y')}",
-            "from_date": start_of_week,
-            "to_date": end_of_week
-        })
+    # ------------------ MAIN REPORT QUERY ------------------
+    query = """
+        SELECT 
+            u.name AS employee_name,
+            u.department,
+            DATE_FORMAT(MIN(s.created_at), '%%Y-%%m-%%d') AS from_date,
+            DATE_FORMAT(MAX(s.created_at), '%%Y-%%m-%%d') AS to_date,
+            GROUP_CONCAT(
+                CONCAT(
+                    s.ai_summary,
+                    '||',
+                    DATE_FORMAT(s.created_at, '%%d %%b %%Y')
+                )
+                SEPARATOR '\n'
+            ) AS weekly_summary
+        FROM submitted_tasks s
+        JOIN users u ON s.user_id = u.id
+        WHERE 1=1
+    """
+    params = []
 
-    # 🧾 Step 2: Build query dynamically
+    # 🔐 Head can see only their employees
+    if user_role == 'head':
+        query += " AND u.assigned_head = %s"
+        params.append(user_id)
+
+    if department:
+        query += " AND u.department = %s"
+        params.append(department)
+
+    if head_id:
+        query += " AND u.assigned_head = %s"
+        params.append(head_id)
+
+    if employee_id:
+        query += " AND u.id = %s"
+        params.append(employee_id)
+
+    if from_date and to_date:
+        query += " AND DATE(s.created_at) BETWEEN %s AND %s"
+        params.extend([from_date, to_date])
+
+    query += " GROUP BY u.id ORDER BY u.department, u.name"
+
+    cursor.execute(query, tuple(params))
+    weekly_reports = cursor.fetchall()
+
+    # ------------------ DEPARTMENTS ------------------
+    cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL")
+    departments = [row['department'] for row in cursor.fetchall()]
+
+    # ------------------ HEADS ------------------
+    heads = []
+    if user_role == 'superadmin':
+        head_query = "SELECT id, name FROM users WHERE role = 'head' AND is_active=True"
+        head_params = []
+        if department:
+            head_query += " AND department = %s"
+            head_params.append(department)
+
+        cursor.execute(head_query, tuple(head_params))
+        heads = cursor.fetchall()
+
+    # ------------------ EMPLOYEES ------------------
+    emp_query = """
+        SELECT id, name 
+        FROM users 
+        WHERE role IN ('employee','intern') AND is_active=True
+    """
+    emp_params = []
+
+    if user_role == 'superadmin':
+        if head_id:
+            emp_query += " AND assigned_head = %s"
+            emp_params.append(head_id)
+        if department:
+            emp_query += " AND department = %s"
+            emp_params.append(department)
+
+    elif user_role == 'head':
+        emp_query += " AND assigned_head = %s"
+        emp_params.append(user_id)
+
+    cursor.execute(emp_query, tuple(emp_params))
+    employees = cursor.fetchall()
+
+    cursor.close()
+
+    return render_template(
+        'superadmin/weekly_report.html',
+        weekly_reports=weekly_reports,
+        departments=departments,
+        heads=heads,
+        employees=employees,
+        selected_department=department,
+        selected_head=head_id,
+        selected_employee=employee_id,
+        from_date=from_date,
+        to_date=to_date
+    )
+
+@app.route('/admin/weekly_report', methods=['GET'])
+@admin_required
+def admin_weekly_report():
+
+    department = session.get('department')  # fixed department
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     query = """
         SELECT 
             u.name AS employee_name,
@@ -1008,113 +1247,32 @@ def superadmin_weekly_report():
             GROUP_CONCAT(s.ai_summary SEPARATOR '\n') AS weekly_summary
         FROM submitted_tasks s
         JOIN users u ON s.user_id = u.id
-        WHERE 1 = 1
-    """
-
-    params = []
-
-    # Apply department filter
-    if department_filter:
-        query += " AND u.department = %s"
-        params.append(department_filter)
-
-    # Apply week filter safely
-    if week_filter and week_filter.isdigit():
-        week_index = int(week_filter)
-        if 0 <= week_index < len(weeks):
-            selected_week = weeks[week_index]
-            query += " AND s.created_at BETWEEN %s AND %s"
-            params.extend([selected_week["from_date"], selected_week["to_date"]])
-
-    query += " GROUP BY u.id, u.department ORDER BY u.department, u.name"
-
-    print("✅ Final Query:", query)
-    print("✅ Params:", params)
-
-    # Execute only if placeholders and params count match
-    try:
-        cursor.execute(query, tuple(params))
-    except Exception as e:
-        print("❌ SQL Execution Error:", e)
-        raise e
-
-    weekly_reports = cursor.fetchall()
-    cursor.close()
-
-    # Fetch departments for dropdown
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT DISTINCT department FROM users WHERE department IS NOT NULL")
-    departments = [row['department'] for row in cursor.fetchall()]
-    cursor.close()
-
-    return render_template(
-        'superadmin/weekly_report.html',
-        weekly_reports=weekly_reports,
-        weeks=weeks,
-        selected_department=department_filter,
-        selected_week=week_filter,
-        departments=departments
-    )
-
-# admin weekly report
-@app.route('/admin/weekly_report', methods=['GET'])
-@admin_required
-def admin_weekly_report():
-    # Admin's fixed department
-    department = session.get('department')
-
-    week_filter = request.args.get('week')
-
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-
-    # Calculate last 4 weeks
-    today = datetime.datetime.now()
-    weeks = []
-    for i in range(4):
-        end_of_week = today - datetime.timedelta(days=today.weekday() - 5 + 7 * i)
-        start_of_week = end_of_week - datetime.timedelta(days=5)
-        weeks.append({
-            "label": f"{start_of_week.strftime('%d %b')} - {end_of_week.strftime('%d %b %Y')}",
-            "from_date": start_of_week,
-            "to_date": end_of_week
-        })
-
-    # Base query
-    query = """
-        SELECT 
-            u.name AS employee_name,
-            u.department,
-            DATE_FORMAT(MIN(s.created_at), '%%Y-%%m-%%d') AS from_date,
-            DATE_FORMAT(MAX(s.created_at), '%%Y-%%m-%%d') AS to_date,
-            GROUP_CONCAT(s.ai_summary SEPARATOR '\\n') AS weekly_summary
-        FROM submitted_tasks s
-        JOIN users u ON s.user_id = u.id
         WHERE u.department = %s
     """
 
     params = [department]
 
-    # Week filter
-    if week_filter and week_filter.isdigit():
-        index = int(week_filter)
-        if 0 <= index < len(weeks):
-            wk = weeks[index]
-            query += " AND s.created_at BETWEEN %s AND %s"
-            params.extend([wk["from_date"], wk["to_date"]])
+    # 📅 Date range filter
+    if from_date and to_date:
+        query += " AND DATE(s.created_at) BETWEEN %s AND %s"
+        params.extend([from_date, to_date])
 
-    query += " GROUP BY u.id ORDER BY u.name"
+    query += " GROUP BY u.id, u.name, u.department ORDER BY u.name"
+
+    print("✅ Admin Query:", query)
+    print("✅ Params:", params)
 
     cursor.execute(query, tuple(params))
     weekly_reports = cursor.fetchall()
     cursor.close()
 
     return render_template(
-        'superadmin/weekly_report.html',
+        'superadmin/weekly_report.html',  # reuse same UI
         weekly_reports=weekly_reports,
-        weeks=weeks,
-        selected_department=department,  # fixed
-        selected_week=week_filter,
-        departments=[department]  # admin can only see own dept
+        selected_department=department,
+        from_date=from_date,
+        to_date=to_date,
+        departments=[department]  # admin sees only own dept
     )
 
 
@@ -1276,6 +1434,7 @@ def systemaccess():
 
     user_role = session.get('user_role')
     department = session.get('department')
+    head_id = session.get('user_id')
 
     cursor = mysql.connection.cursor()
 
@@ -1303,31 +1462,42 @@ def systemaccess():
     # =========================
     elif user_role == 'head':
 
-        # role counts (only show THEIR department employees + interns)
+    
+
+    # =========================
+    # Role counts (ONLY their team)
+    # =========================
         cursor.execute("""
-            SELECT role, COUNT(*) AS count 
-            FROM users 
-            WHERE is_active = TRUE 
-              AND department = %s
-              AND role IN ('employee', 'intern') 
+            SELECT role, COUNT(*) AS count
+            FROM users
+            WHERE is_active = TRUE
+            AND assigned_head = %s
+            AND role IN ('employee', 'intern')
             GROUP BY role
-        """, (department,))
+        """, (head_id,))
         role_counts_raw = cursor.fetchall()
         user_role_counts = {row['role']: row['count'] for row in role_counts_raw}
 
-        # department count → admin only sees their own
-        user_dept_counts = {department: sum(user_role_counts.values())}
+        # =========================
+        # Department count (derived from team)
+        # =========================
+        user_dept_counts = {
+            session.get('department'): sum(user_role_counts.values())
+        }
 
-        # fetch department users only
+        # =========================
+        # Fetch ONLY users assigned to this head
+        # =========================
         cursor.execute("""
             SELECT u.*, h.name AS assigned_head_name
-            FROM users u 
+            FROM users u
             LEFT JOIN users h ON u.assigned_head = h.id
             WHERE u.is_active = TRUE
-              AND u.department = %s
-              AND u.role IN ('employee', 'intern')
-        """, (department,))
+            AND u.assigned_head = %s
+            AND u.role IN ('employee', 'intern')
+        """, (head_id,))
         all_users = cursor.fetchall()
+
 
     else:
         flash("Unauthorized access.", "danger")
@@ -1343,80 +1513,44 @@ def systemaccess():
         user_role=user_role
     )
 
-#Update User
-
-@app.route('/update_user_role', methods=['POST'])
-def update_user_role():
-    if 'logged_in' not in session:
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
-
-    requester_role = session.get('user_role')
-
-    data = request.get_json()
-    user_id = data.get('user_id')
-    new_role = data.get('new_role')
-
-    if not user_id or not new_role or new_role not in ["superadmin", "admin", "employee", "intern"]:
-        return jsonify({"success": False, "message": "Invalid data"}), 400
-
-    # Fetch current role of the user being updated
-    cursor = mysql.connection.cursor()
-    cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
-    target = cursor.fetchone()
-
-    if not target:
-        cursor.close()
-        return jsonify({"success": False, "message": "User not found"}), 404
-
-    target_role = target['role']
-
-    # ---------- ACCESS CONTROL LOGIC ----------
-    # Superadmin: Unlimited
-    if requester_role == "superadmin":
-        pass  # allow everything
-
-    # Admin: can change only employee & intern
-    elif requester_role == "admin":
-        if target_role not in ["employee", "intern"]:
-            cursor.close()
-            return jsonify({"success": False, "message": "Admins cannot modify this user"}), 403
-
-        if new_role not in ["employee", "intern"]:
-            cursor.close()
-            return jsonify({"success": False, "message": "Admins cannot assign this role"}), 403
-
-    else:
-        cursor.close()
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
-    # ------------------------------------------
-
-    try:
-        cursor.execute("UPDATE users SET role = %s WHERE id = %s", (new_role, user_id))
-        mysql.connection.commit()
-
-        return jsonify({"success": True, "message": "User role updated."})
-
-    except Exception as e:
-        print("Error:", e)
-        return jsonify({"success": False, "message": "Database error"}), 500
-
-    finally:
-        cursor.close()
 
 
-@app.route('/delete_user/<user_id>', methods=['POST'])
+
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
     if 'logged_in' not in session or session.get('user_role') != 'superadmin':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
+    cursor = mysql.connection.cursor()
+
     try:
-        cursor = mysql.connection.cursor()
+        # 1️⃣ Remove user from all project_members
+        cursor.execute("""
+            UPDATE project_members
+            SET user_ids = TRIM(BOTH ',' FROM
+                REPLACE(
+                    REPLACE(
+                        REPLACE(user_ids, CONCAT(',', %s, ','), ','),
+                    CONCAT(%s, ','), ''),
+                CONCAT(',', %s), '')
+            )
+            WHERE FIND_IN_SET(%s, user_ids)
+        """, (user_id, user_id, user_id, user_id))
+
+        # 2️⃣ Soft delete user
         cursor.execute(
-            "UPDATE users SET is_active = FALSE WHERE id = %s", (user_id,))
+            "UPDATE users SET is_active = FALSE WHERE id = %s",
+            (user_id,)
+        )
+
         mysql.connection.commit()
-        return jsonify({"success": True, "message": "User deactivated."})
+        return jsonify({"success": True, "message": "User deactivated and removed from projects."})
+
     except Exception as e:
+        mysql.connection.rollback()
+        print("Deactivate user error:", e)
         return jsonify({"success": False, "message": "Database error."}), 500
+
     finally:
         cursor.close()
 
@@ -1437,6 +1571,87 @@ def get_department_head(department_name):
         return jsonify({"success": False, "message": "Database error."}), 500
     finally:
         cursor.close()
+
+#Edit form in superadmin
+@app.route('/update_user_details', methods=['POST'])
+def update_user_details():
+    if 'logged_in' not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    requester_role = session.get('user_role')
+    data = request.get_json()
+
+    cursor = mysql.connection.cursor()
+
+    try:
+        # 🔒 Fetch existing department if not superadmin
+        department = None
+        if requester_role != 'superadmin':
+            cursor.execute(
+                "SELECT department FROM users WHERE id = %s",
+                (data['user_id'],)
+            )
+            row = cursor.fetchone()
+            department = row['department'] if row else None
+        else:
+            department = data.get('department')
+
+        cursor.execute("""
+            UPDATE users
+            SET name=%s,
+                email=%s,
+                role=%s,
+                department=%s
+            WHERE id=%s
+        """, (
+            data['name'],
+            data['email'],
+            data['role'],
+            department,
+            data['user_id']
+        ))
+
+        mysql.connection.commit()
+        return jsonify({"success": True})
+
+    except Exception as e:
+        mysql.connection.rollback()
+        print("UPDATE ERROR:", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    finally:
+        cursor.close()
+
+
+#get user summary to show when deleting
+@app.route('/user_dependency_summary/<user_id>')
+def user_dependency_summary(user_id):
+    if 'logged_in' not in session or session.get('user_role') != 'superadmin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    data = get_employee_data(user_id)
+
+    if not data or not data.get("current_user"):
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    name = data["current_user"]["name"]
+
+    # Count ongoing (not completed) projects
+    ongoing_projects = sum(
+        1 for p in data["projects"]
+        if p["status"] != "Completed"
+    )
+
+    # Pending tasks already filtered in helper
+    pending_tasks = len(data["assigned_tasks"])
+
+    return jsonify({
+        "success": True,
+        "name": name,
+        "projects": ongoing_projects,
+        "tasks": pending_tasks
+    })
+
 
 
 @app.route('/update_password', methods=['POST'])
@@ -1532,18 +1747,66 @@ def get_user_name(user_id):
 # == ADMIN ROUTES
 # ==============================================================================
 
+def get_head_project_list(cur, head_id):
+    query = """
+        SELECT 
+            p.id,
+            p.name AS project_name,
+            p.department,
+            p.status,
+            p.created_at,
+            p.deadline_date,
+            GROUP_CONCAT(u.name SEPARATOR ', ') AS members
+        FROM projects p
+        LEFT JOIN project_members pm 
+            ON pm.project_id = p.id
+        LEFT JOIN users u 
+            ON FIND_IN_SET(u.id, pm.user_ids)
+        WHERE p.project_head_id = %s
+        GROUP BY p.id
+    """
+    cur.execute(query, (head_id,))
+    return cur.fetchall()
+
+
+
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
 
-    department = session.get('department')  # e.g. "Sales"
+    department = session.get('department').capitalize()
+    user_role = session.get('user_role')
+    today=date.today()
+    head_id = session['user_id']
     cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    dept_projects = get_dept_projects(
-        cur,
-        department,
-        ['Ongoing', 'Pending', 'Completed']
-    )
+    # dept_projects = get_dept_projects(
+    #     cur,
+    #     department,
+    #     ['Ongoing', 'Pending', 'Completed']
+    # )
+    
+    project_list = get_head_project_list(cur, head_id)
+
+    project_summary = get_head_projects(
+    cur,
+    head_id,
+    ['Ongoing', 'Pending', 'Completed']
+)
+
+    # dept_tasks = get_dept_tasks(cur, department)
+
+    dept_tasks = get_head_tasks(cur, head_id)
+
+    cur.execute("""
+        SELECT COUNT(DISTINCT tw.user_id) AS count
+        FROM today_work tw
+        JOIN users u ON tw.user_id = u.id
+        WHERE tw.work_date = %s
+        AND (u.id = %s OR u.assigned_head = %s)
+    """, (today, head_id, head_id))
+
+    today_work_count = cur.fetchone()['count']
 
     cur.close()
 
@@ -1553,26 +1816,38 @@ def admin_dashboard():
     graphics_projects = []
     digital_projects = []
 
-    if department == 'Sales':
-        sales_projects = dept_projects
-    elif department == 'Developer':
-        developer_projects = dept_projects
-    elif department == 'Graphics':
-        graphics_projects = dept_projects
-    elif department == 'Digital':
-        digital_projects = dept_projects
+    # if department == 'Sales':
+    #     sales_projects = project_summary  
+    # elif department == 'Developer':
+    #     developer_projects = project_summary  
+    # elif department == 'Graphics':
+    #     graphics_projects = project_summary  
+    # elif department == 'Digital':
+    #     digital_projects = project_summary  
+
+    for p in project_list:
+        if p['department'] == 'Sales':
+            sales_projects.append(p)
+        elif p['department'] == 'Developer':
+            developer_projects.append(p)
+        elif p['department'] == 'Graphics':
+            graphics_projects.append(p)
+        elif p['department'] == 'Digital':
+            digital_projects.append(p)
 
     return render_template(
         'superadmin/dashboard.html',
-        user_role='admin',
+        user_role=user_role,
         department=department.lower(),
-
+        dept_tasks=dept_tasks,
         sales_projects=sales_projects,
         developer_projects=developer_projects,
         graphics_projects=graphics_projects,
         digital_projects=digital_projects,
-
-        projects=dept_projects  # optional, keeps counts working
+        today=today,
+        today_work_count=today_work_count,
+        projects=project_list,          # 👈 REAL list for counts
+        project_summary=project_summary  # optional, keeps counts working
     )
 
 
@@ -1637,17 +1912,22 @@ def admin_submitted_tasks():
         # Base query
         query = """
             SELECT
-                st.id, st.task_description, st.status, st.attachment, st.ai_summary,
-                st.created_at as submitted_date,
-                u.name as employee_name,
+                st.id,
+                st.task_description,
+                st.status,
+                st.attachment,
+                st.ai_summary,
+                st.created_at AS submitted_date,
+                u.name AS employee_name,
                 at.task_name,
-                p.name as project_name
+                p.name AS project_name
             FROM submitted_tasks st
             JOIN users u ON st.user_id = u.id
             LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
-            LEFT JOIN projects p ON at.project_id = p.id
+            LEFT JOIN projects p ON st.project_id = p.id
             WHERE u.department = %s
         """
+
         params = [department]
 
         # Add project filter if provided
@@ -1700,25 +1980,52 @@ def admin_adduser():
 @admin_required
 def admin_createproject():
     department = session.get('department')
-    cursor = mysql.connection.cursor()
-    cursor.execute(
-        "SELECT id, name, email, department FROM users WHERE role = 'head' AND department = %s AND is_active = TRUE", (department,))
-    admins = cursor.fetchall()
-    
+    head_id = session.get('user_id')
 
-    cursor.execute("SELECT id, name, role, department FROM users WHERE role IN ('employee','intern') AND is_active=TRUE")
+    cursor = mysql.connection.cursor()
+
+    # Heads in same department (optional, keep if needed)
+    cursor.execute(
+        "SELECT id, name, email, department "
+        "FROM users "
+        "WHERE role = 'head' AND department = %s AND is_active = TRUE",
+        (department,)
+    )
+    admins = cursor.fetchall()
+
+    # ✅ ONLY members assigned to THIS head
+    cursor.execute(
+        "SELECT id, name, role, department, assigned_head "
+        "FROM users "
+        "WHERE role IN ('employee','intern') "
+        "AND assigned_head = %s "
+        "AND is_active = TRUE",
+        (head_id,)
+    )
     members = cursor.fetchall()
+
     busy_members = get_busy_user_ids(cursor)
     cursor.close()
+
     today_date = datetime.date.today().strftime('%Y-%m-%d')
-    # Corrected Path
-    return render_template('superadmin/createproject.html', admins=admins, today_date=today_date, department=department,members=members, busy_members= busy_members)
+
+    return render_template(
+        'superadmin/createproject.html',
+        admins=admins,
+        today_date=today_date,
+        department=department,
+        members=members,
+        busy_members=busy_members
+    )
+
 
 
 @app.route('/admin/viewprojects')
 @admin_required
 def admin_viewprojects():
     department = session.get('department')
+    head_id = session.get('user_id')
+
     page = request.args.get('page', 1, type=int)
     per_page = 10
     status_filter = request.args.get('status')  # <-- 🟢 ADDED STATUS FILTER
@@ -1728,16 +2035,17 @@ def admin_viewprojects():
         # 🟢 Count projects with filter
         if status_filter:
             cur.execute("""
-                SELECT COUNT(id) as count 
-                FROM projects 
-                WHERE department = %s AND status = %s
-            """, (department, status_filter))
+                SELECT COUNT(id) AS count
+                FROM projects
+                WHERE project_head_id = %s
+                AND status = %s
+            """, (head_id, status_filter))
         else:
             cur.execute("""
-                SELECT COUNT(id) as count 
-                FROM projects 
-                WHERE department = %s
-            """, (department,))
+                SELECT COUNT(id) AS count
+                FROM projects
+                WHERE project_head_id = %s
+            """, (head_id,))
 
         total_projects = cur.fetchone()['count']
         total_pages = ceil(total_projects / per_page)
@@ -1746,26 +2054,28 @@ def admin_viewprojects():
         # 🟢 Fetch filtered OR unfiltered list
         if status_filter:
             cur.execute("""
-                SELECT p.id, p.name, p.description, p.department, p.created_at, 
-                       p.deadline_date, p.status AS status, p.project_head_id, 
-                       u.name AS project_head_name
-                FROM projects p 
+                SELECT p.id, p.name, p.description, p.department, p.created_at,
+                    p.deadline_date, p.status, p.project_head_id,
+                    u.name AS project_head_name
+                FROM projects p
                 LEFT JOIN users u ON p.project_head_id = u.id
-                WHERE p.department = %s AND p.status = %s
+                WHERE p.project_head_id = %s
+                AND p.status = %s
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
-            """, (department, status_filter, per_page, offset))
+            """, (head_id, status_filter, per_page, offset))
         else:
             cur.execute("""
-                SELECT p.id, p.name, p.description, p.department, p.created_at, 
-                       p.deadline_date, p.status AS status, p.project_head_id, 
-                       u.name AS project_head_name
-                FROM projects p 
+                SELECT p.id, p.name, p.description, p.department, p.created_at,
+                    p.deadline_date, p.status, p.project_head_id,
+                    u.name AS project_head_name
+                FROM projects p
                 LEFT JOIN users u ON p.project_head_id = u.id
-                WHERE p.department = %s
+                WHERE p.project_head_id = %s
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
-            """, (department, per_page, offset))
+            """, (head_id, per_page, offset))
+
 
         projects = cur.fetchall()
 
@@ -1819,13 +2129,22 @@ def admin_viewprojects():
 @admin_required
 def admin_createtask():
     department = session.get('department')
+    head_id = session.get('user_id')
+
     cur = mysql.connection.cursor()
     try:
         cur.execute(
-            "SELECT id, name, email, department FROM users WHERE role IN ('employee', 'intern') AND department = %s AND is_active = TRUE ORDER BY name", (department,))
+            "SELECT id, name, email, department, assigned_head FROM users "
+            "WHERE role IN ('employee', 'intern') "
+            "AND assigned_head = %s "
+            "AND is_active = TRUE "
+            "ORDER BY name",
+            (head_id,)
+        )
+
         employees_and_interns = cur.fetchall()
         cur.execute(
-            "SELECT id, name FROM projects WHERE department = %s ORDER BY name", (department,))
+            "SELECT id, name, department FROM projects WHERE project_head_id = %s ORDER BY name", (head_id,))
         projects = cur.fetchall()
          # get busy users using assigned_tasks logic
         busy_users = get_busy_user_ids(cur)
@@ -1855,7 +2174,7 @@ def admin_submit_task():
     user_id = session['user_id']
 
     if request.method == 'POST':
-        project_id = request.form.get('project_id') or request.form.get('project_dropdown')
+        project_id = request.form.get('project_id') 
 
         task_description = request.form.get('task_description')
         status = request.form.get('status')
@@ -1957,63 +2276,85 @@ def admin_submit_task():
     return render_template('superadmin/submit_task.html', assigned_tasks=assigned_tasks,projects=projects)
 
 # admin viewTask section
-
 @app.route('/admin/viewtasks')
 @admin_required
 def admin_viewtasks():
-    department = session.get('department')
+    head_id = session.get('user_id')
     page = request.args.get('page', 1, type=int)
-    per_page = 15  # Number of tasks per page
+    per_page = 15
 
-    # Ensure page is at least 1
     if page < 1:
         page = 1
 
     cur = mysql.connection.cursor()
     try:
-        cur.execute("SELECT COUNT(id) as count FROM assigned_tasks WHERE department = %s", (department,))
+        # COUNT (head-wise)
+        cur.execute("""
+            SELECT COUNT(at.id) AS count
+            FROM assigned_tasks at
+            JOIN projects p ON at.project_id = p.id
+            WHERE p.project_head_id = %s
+        """, (head_id,))
         total_tasks = cur.fetchone()['count']
-        total_pages = ceil(total_tasks / per_page) if total_tasks > 0 else 1
+        total_pages = ceil(total_tasks / per_page) if total_tasks else 1
 
         offset = (page - 1) * per_page
 
+        # FETCH TASKS (head-wise)
         cur.execute("""
-            SELECT at.id, at.task_name, at.task_description, at.due_date, at.status, at.project_id, at.department, 
-                at.date_assigned, at.time_assigned, at.assigned_to_user_id, 
-                u.name AS assigned_to_name, u.role, p.name AS project
+            SELECT at.id, at.task_name, at.task_description, at.due_date, at.status,
+                   at.project_id, at.department, at.date_assigned, at.time_assigned,
+                   at.assigned_to_user_id,
+                   u.name AS assigned_to_name, u.role,
+                   p.name AS project
             FROM assigned_tasks at
+            JOIN projects p ON at.project_id = p.id
             LEFT JOIN users u ON at.assigned_to_user_id = u.id
-            LEFT JOIN projects p ON at.project_id = p.id
-            WHERE at.department = %s
+            WHERE p.project_head_id = %s
             ORDER BY at.date_assigned DESC, at.time_assigned DESC
             LIMIT %s OFFSET %s
-        """, (department, per_page, offset))
+        """, (head_id, per_page, offset))
         tasks = cur.fetchall()
 
-
-        cur.execute(
-            "SELECT id, name FROM projects WHERE department = %s ORDER BY name", (department,))
+        # Project list (head-wise)
+        cur.execute("""
+            SELECT id, name
+            FROM projects
+            WHERE project_head_id = %s
+            ORDER BY name
+        """, (head_id,))
         projects = cur.fetchall()
 
+        # Formatting
         for task in tasks:
-            task['assigned_date_formatted'] = task['date_assigned'].strftime(
-                '%d/%m/%Y') if task.get('date_assigned') else 'N/A'
-            task['time_assigned_formatted'] = str(
-                task['time_assigned']) if task.get('time_assigned') else 'N/A'
-            task['due_date'] = task['due_date'].strftime(
-                '%d/%m/%Y') if task.get('due_date') else 'N/A'
+            task['assigned_date_formatted'] = (
+                task['date_assigned'].strftime('%d/%m/%Y')
+                if task.get('date_assigned') else 'N/A'
+            )
+            task['time_assigned_formatted'] = (
+                str(task['time_assigned'])
+                if task.get('time_assigned') else 'N/A'
+            )
+            task['due_date'] = (
+                task['due_date'].strftime('%Y/%m/%d')
+                if task.get('due_date') else 'N/A'
+            )
+
     except Exception as e:
         flash(f"Error fetching tasks: {e}", "danger")
         tasks, projects, total_pages = [], [], 1
     finally:
         cur.close()
 
-    return render_template('superadmin/viewtasks.html',
-                           tasks=tasks,
-                           projects=projects,
-                           current_page=page,
-                           total_pages=total_pages,
-                           endpoint='admin_viewtasks')
+    return render_template(
+        'superadmin/viewtasks.html',
+        tasks=tasks,
+        projects=projects,
+        current_page=page,
+        total_pages=total_pages,
+        endpoint='admin_viewtasks'
+    )
+
 
 
 @app.route('/admin/profile')
@@ -2038,91 +2379,100 @@ def admin_profile():
 # == EMPLOYEE & INTERN ROUTES
 # ==============================================================================
 
-
 def get_employee_data(user_id):
     cursor = mysql.connection.cursor()
 
     # Current user
     cursor.execute("""
-        SELECT u.*, h.name AS assigned_head_name, h.email as head_email
+        SELECT u.*, h.name AS assigned_head_name, h.email AS head_email
         FROM users u
         LEFT JOIN users h ON u.assigned_head = h.id
         WHERE u.id = %s
     """, (user_id,))
     current_user_data = cursor.fetchone()
 
-    # Assigned tasks
+    # Assigned tasks (Pending)
     cursor.execute("""
-        SELECT at.*, p.name as project_name, u.name as assigned_by_name,
-               DATE_FORMAT(at.due_date, '%%d/%%m/%%Y') as due_date,
-               DATE_FORMAT(at.date_assigned, '%%d/%%m/%%Y') as assigned_date
+        SELECT at.*, p.name AS project_name, u.name AS assigned_by_name,
+               at.due_date due_date,
+               at.date_assigned as assigned_date
         FROM assigned_tasks at
         LEFT JOIN projects p ON at.project_id = p.id
         LEFT JOIN users u ON at.assigned_by_user_id = u.id
-        WHERE at.assigned_to_user_id = %s
+        WHERE at.status = 'Pending'
+          AND at.assigned_to_user_id = %s
         ORDER BY at.due_date DESC
     """, (user_id,))
     assigned_tasks = cursor.fetchall()
 
-    # Submitted tasks
+    # Submitted tasks (Completed)
     cursor.execute("""
-        SELECT st.*, p.name as project_name, at.due_date as due_date,
-               DATE_FORMAT(st.created_at, '%%d/%%m/%%Y') as created_at_date
+        SELECT st.*, p.name AS project_name,
+               at.date_assigned, at.due_date, at.task_name,
+               st.created_at AS completed_date
         FROM submitted_tasks st
         LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
-        LEFT JOIN projects p ON at.project_id = p.id
-        WHERE st.user_id = %s
+        LEFT JOIN projects p ON st.project_id = p.id
+        WHERE st.status = 'Completed'
+          AND st.user_id = %s
         ORDER BY st.created_at DESC
     """, (user_id,))
     submitted_tasks = cursor.fetchall()
 
-    # 🔥 Ongoing projects for this employee
+    # Employee projects
     cursor.execute("""
-        SELECT p.id,
-               p.name AS project_name,
-               DATE_FORMAT(p.deadline_date, '%%d/%%m/%%Y') AS due_date
+        SELECT 
+            p.id,
+            p.name AS project_name,
+            p.deadline_date,
+            p.description,
+            p.created_at,
+            p.status
         FROM projects p
         JOIN project_members pm ON pm.project_id = p.id
         WHERE FIND_IN_SET(%s, pm.user_ids)
-        AND p.status = 'Ongoing'
-
+        ORDER BY 
+            CASE 
+                WHEN p.status = 'Completed' THEN 2
+                ELSE 1
+            END,
+            p.deadline_date ASC
     """, (user_id,))
-
-    
-    
     rows = cursor.fetchall()
-    projects = []
 
-    for row in rows:
-        projects.append({
-            'id': row['id'],
-            'project_name': row['project_name'],
-            'due_date': row['due_date']
-    })
+    projects = [{
+        'id': row['id'],
+        'project_name': row['project_name'],
+        'deadline_date': row['deadline_date'],
+        'description': row['description'],
+        'created_at': row['created_at'],
+        'status': row['status']
+    } for row in rows]
 
     cursor.close()
-    return current_user_data, assigned_tasks, submitted_tasks, projects
+
+    return {
+        "current_user": current_user_data,
+        "assigned_tasks": assigned_tasks,
+        "submitted_tasks": submitted_tasks,
+        "projects": projects,
+        "today": date.today()
+    }
 
 @app.route('/employee/dashboard')
 def employee_dashboard():
-    if 'logged_in' not in session or session.get('user_role') not in ['employee', 'intern']:
-        flash('Unauthorized access.', 'danger')
+    if 'user_id' not in session:
         return redirect(url_for('login'))
-
-    user_id = session.get('user_id')
-
-    (current_user_data,
-    assigned_tasks,
-    submitted_tasks,
-    projects) = get_employee_data(user_id)
+    
+    data = get_employee_data(session['user_id'])
 
     return render_template(
-        'employee/Edashboard.html',
-        name=session['username'],
-        submitted_tasks=submitted_tasks,
-        current_user_data=current_user_data,
-        assigned_tasks=assigned_tasks,
-        projects=projects
+        "employee/Edashboard.html",
+        current_user=data['current_user'],
+        assigned_tasks=data['assigned_tasks'],
+        submitted_tasks=data['submitted_tasks'],
+        projects=data['projects'],
+        today=data['today']
     )
 
 #view project section
@@ -2164,38 +2514,40 @@ def employee_ongoing_projects():
     projects = cur.fetchall()
     cur.close()
 
-    return render_template(
-        'superadmin/ongoing_projects.html',
-        projects=projects,
-        user_role='employee'
-    )
+    return render_template('superadmin/ongoing_projects.html', projects=projects, user_role='employee', today=date.today())
+
 #employee create task section
 @app.route('/employee/createtask')
 def employee_createtask():
-    if 'logged_in' not in session or session['user_role'] != 'employee':
+    if 'logged_in' not in session or session.get('user_role') != 'employee':
         flash('Unauthorized access. Please log in.', 'danger')
         return redirect(url_for('login'))
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(DictCursor)
+
     try:
-        cur.execute(
-            "SELECT id, name, email, department FROM users WHERE (role = 'intern') AND is_active = TRUE")
+        cur.execute("""SELECT id, name, email, department FROM users WHERE role = 'intern' AND is_active = TRUE""")
         interns = cur.fetchall()
-        cur.execute("SELECT id, name FROM projects ORDER BY name")
+
+        cur.execute("""SELECT DISTINCT a.id, a.name, a.department FROM projects a INNER JOIN project_members b ON a.id = b.project_id WHERE FIND_IN_SET(%s, b.user_ids) ORDER BY a.name
+        """, (session['user_id'],))
         projects = cur.fetchall()
 
         busy_users = get_busy_user_ids(cur)
+
     except Exception as e:
-        flash(f"Error fetching data: {e}", "danger")
-        interns, projects = [], []
-        busy_users=set()
+        flash("Error fetching data.", "danger")
+        print(e)
+        interns = []
+        projects = []
+        busy_users = set()
+
     finally:
         cur.close()
 
     today_date = datetime.date.today().strftime('%Y-%m-%d')
-    # Corrected Path
-    return render_template('superadmin/createtask.html', interns=interns, projects=projects, today_date=today_date,busy_users=busy_users)
 
+    return render_template('superadmin/createtask.html',interns=interns, projects=projects, today_date=today_date, busy_users=busy_users)
 
 @app.route('/employee/submit_task', methods=['GET', 'POST'])
 def employee_submit_task():
@@ -2289,7 +2641,8 @@ def employee_submit_task():
             at.task_name, 
             at.project_id, 
             p.name as project_name,
-            at.due_date
+            at.due_date, 
+            at.date_assigned
         FROM assigned_tasks at
         LEFT JOIN projects p ON at.project_id = p.id
         WHERE at.assigned_to_user_id = %s And at.status !='Completed'
@@ -2297,10 +2650,11 @@ def employee_submit_task():
     """, (user_id,))
     assigned_tasks = cursor.fetchall()
     cursor.execute("""
-    SELECT id, name 
-    FROM projects
-    WHERE project_head_id = %s
-""", (user_id,))
+        SELECT DISTINCT p.id, p.name
+        FROM projects p
+        LEFT JOIN assigned_tasks at ON at.project_id = p.id
+        WHERE at.assigned_to_user_id = %s
+    """, (user_id,))
     projects = cursor.fetchall()
 
     cursor.close()
@@ -2315,7 +2669,9 @@ def employee_assigned_tasks():
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    _, assigned_tasks, _, _ = get_employee_data(user_id)
+    data = get_employee_data(user_id)
+    assigned_tasks = data["assigned_tasks"]
+
     # Corrected Path
     return render_template('employee/taskassign.html', name=session['username'], assigned_tasks=assigned_tasks)
 
@@ -2345,7 +2701,7 @@ def employee_submitted_tasks():
                    DATE_FORMAT(st.created_at, '%%d/%%m/%%Y') as created_at_date
             FROM submitted_tasks st
             LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
-            LEFT JOIN projects p ON at.project_id = p.id
+            LEFT JOIN projects p ON st.project_id = p.id
             WHERE st.user_id = %s
             ORDER BY st.created_at DESC
             LIMIT %s OFFSET %s
@@ -2390,6 +2746,341 @@ def employee_profile():
     # Corrected Path
     return render_template('superadmin/profile.html', user=user_data)
 
+@app.route('/employee/workreport')
+def employee_workreport():
+    if 'logged_in' not in session or session.get('user_role') not in ['employee', 'intern']:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Items per page
+
+    # Get filter dates
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    # Build date filter query
+    date_filter = ""
+    params = [user_id]  # Always include user_id as first param
+    if from_date and to_date:
+        date_filter = "AND DATE(st.created_at) BETWEEN %s AND %s"
+        params.extend([from_date, to_date])
+    elif from_date:
+        date_filter = "AND DATE(st.created_at) >= %s"
+        params.append(from_date)
+    elif to_date:
+        date_filter = "AND DATE(st.created_at) <= %s"
+        params.append(to_date)
+
+    cursor = mysql.connection.cursor()
+    try:
+        # Total tasks count for pagination
+        cursor.execute(
+            f"SELECT COUNT(id) as count FROM submitted_tasks st WHERE st.user_id = %s {date_filter}",
+            tuple(params)
+        )
+        total_tasks = cursor.fetchone()['count']
+        total_pages = ceil(total_tasks / per_page)
+        offset = (page - 1) * per_page
+
+        # Fetch paginated submitted tasks with project and task name
+        query = f"""
+            SELECT st.*, 
+                   COALESCE(p.name, 'N/A') AS project_name,
+                   COALESCE(at.task_name, 'N/A') AS task_name
+            FROM submitted_tasks st
+            LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
+            LEFT JOIN projects p ON st.project_id = p.id
+            WHERE st.user_id = %s
+            {date_filter}
+            ORDER BY st.created_at DESC
+            LIMIT %s OFFSET %s
+        """
+        params.extend([per_page, offset])
+        cursor.execute(query, tuple(params))
+        submitted_tasks = cursor.fetchall()
+    except Exception as e:
+        flash(f"Error fetching submitted tasks: {e}", "danger")
+        submitted_tasks = []
+        total_pages = 1
+    finally:
+        cursor.close()
+
+    return render_template(
+        'employee/workreport.html',
+        name=session['username'],
+        submitted_tasks=submitted_tasks,
+        current_page=page,
+        total_pages=total_pages,
+        endpoint='employee_workreport',
+        from_date=from_date,
+        to_date=to_date
+    )
+
+# from flask import request, render_template, session, redirect, url_for, flash
+#from math import ceil
+# from datetime import date
+# import MySQLdb
+
+@app.route('/superadmin/project_report', methods=['GET'])
+def employee_project_report():
+
+    # 🔐 Allow only superadmin & head
+    if 'logged_in' not in session or session.get('user_role') not in ['superadmin', 'head']:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('login'))
+
+    user_role = session['user_role']
+    user_id = session['user_id']
+    head_id = session.get('user_id')
+
+    # ---------------- FILTER INPUTS ----------------
+    selected_department = request.args.get('department')
+    if not selected_department:
+        selected_department = None
+
+    selected_project = request.args.get('project_id', type=int)
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    # ---------------- DEPARTMENTS ----------------
+   
+
+    if user_role == 'head':
+        cursor.execute("""
+            SELECT DISTINCT department
+            FROM projects
+            WHERE project_head_id = %s
+            AND department IS NOT NULL
+            AND status != 'deleted'
+        """, (head_id,))
+    else:  # superadmin
+        cursor.execute("""
+            SELECT DISTINCT department
+            FROM projects
+            WHERE department IS NOT NULL
+            AND status != 'deleted'
+        """)
+
+    departments = [row['department'] for row in cursor.fetchall()]
+
+
+
+    # ---------------- PROJECTS (BY DEPARTMENT) ----------------
+   
+    project_params = []
+
+    if user_role == 'head':
+        project_query = """
+            SELECT id, name
+            FROM projects
+            WHERE status != 'deleted'
+            AND project_head_id = %s
+        """
+        project_params.append(head_id)
+
+    else:  # superadmin
+        project_query = """
+            SELECT id, name
+            FROM projects
+            WHERE status != 'deleted'
+        """
+
+    if selected_department:
+        project_query += " AND department = %s"
+        project_params.append(selected_department)
+
+    cursor.execute(project_query, tuple(project_params))
+    projects = cursor.fetchall()
+
+
+
+    # ---------------- PROJECT SUMMARY ----------------
+    project_summary = None
+
+    if selected_project:
+        summary_query = """
+            SELECT 
+                p.id,
+                p.name,
+                p.deadline_date,
+                MIN(st.created_at) AS start_date,
+                MAX(st.created_at) AS last_task_date,
+                SUM(CASE WHEN st.status != 'completed' THEN 1 ELSE 0 END) AS pending_tasks
+            FROM projects p
+            LEFT JOIN submitted_tasks st ON st.project_id = p.id
+            WHERE p.id = %s
+            GROUP BY p.id
+        """
+        cursor.execute(summary_query, (selected_project,))
+        project_summary = cursor.fetchone()
+
+        if project_summary:
+            today = date.today()
+
+            start_date = project_summary['start_date'].date() if project_summary['start_date'] else None
+            due_date = project_summary['deadline_date']
+            last_date = project_summary['last_task_date'].date() if project_summary['last_task_date'] else None
+
+            if project_summary['pending_tasks'] == 0 and last_date:
+                project_summary['status_text'] = "Completed"
+                project_summary['status_class'] = "success"
+                project_summary['completed_date'] = last_date
+                project_summary['duration_days'] = (last_date - start_date).days if start_date else 0
+            else:
+                if due_date:
+                    diff_days = (due_date - today).days
+                    if diff_days >= 0:
+                        project_summary['status_text'] = f"{diff_days} days remaining"
+                        project_summary['status_class'] = "warning"
+                    else:
+                        project_summary['status_text'] = f"Overdue by {abs(diff_days)} days"
+                        project_summary['status_class'] = "danger"
+                else:
+                    project_summary['status_text'] = "No deadline"
+                    project_summary['status_class'] = "secondary"
+
+    # ---------------- WHERE CLAUSE ----------------
+    where_clause = "WHERE 1=1"
+    params = []
+
+    if selected_department:
+        where_clause += " AND p.department = %s"
+        params.append(selected_department)
+
+    if selected_project:
+        where_clause += " AND p.id = %s"
+        params.append(selected_project)
+
+    if from_date and to_date:
+        where_clause += " AND DATE(st.created_at) BETWEEN %s AND %s"
+        params.extend([from_date, to_date])
+    elif from_date:
+        where_clause += " AND DATE(st.created_at) >= %s"
+        params.append(from_date)
+    elif to_date:
+        where_clause += " AND DATE(st.created_at) <= %s"
+        params.append(to_date)
+
+    # 🔒 Head sees only their employees
+    if user_role == 'head':
+        where_clause += " AND u.assigned_head = %s"
+        params.append(user_id)
+
+    # ---------------- COUNT ----------------
+    count_query = f"""
+        SELECT COUNT(st.id) AS count
+        FROM submitted_tasks st
+        JOIN users u ON st.user_id = u.id
+        LEFT JOIN projects p ON st.project_id = p.id
+        {where_clause}
+    """
+    cursor.execute(count_query, tuple(params))
+    total_tasks = cursor.fetchone()['count']
+    total_pages = ceil(total_tasks / per_page) if total_tasks else 1
+
+    # ---------------- DATA ----------------
+    data_query = f"""
+        SELECT 
+            st.created_at,
+            st.task_description,
+            u.name AS employee_name,
+            COALESCE(p.name, 'N/A') AS project_name
+        FROM submitted_tasks st
+        JOIN users u ON st.user_id = u.id
+        LEFT JOIN projects p ON st.project_id = p.id
+        {where_clause}
+        ORDER BY st.created_at DESC
+        LIMIT %s OFFSET %s
+    """
+    final_params = params + [per_page, offset]
+    cursor.execute(data_query, tuple(final_params))
+    submitted_tasks = cursor.fetchall()
+
+    cursor.close()
+
+    # ---------------- RENDER ----------------
+    return render_template(
+        'superadmin/project_report.html',
+        submitted_tasks=submitted_tasks,
+        project_summary=project_summary,
+        departments=departments,
+        projects=projects,
+        selected_department=selected_department,
+        selected_project=selected_project,
+        from_date=from_date,
+        to_date=to_date,
+        current_page=page,
+        total_pages=total_pages,
+        endpoint='employee_project_report'
+    )
+
+    #today work section:
+@app.route('/today-work', methods=['GET', 'POST'])
+def today_work():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    role = session['user_role']
+    today = date.today()
+    cursor = mysql.connection.cursor(DictCursor)
+
+    if request.method == 'POST':
+        data = request.get_json()
+        work_text = data.get('today_work', '').strip()
+
+        if role == 'superadmin':
+            return jsonify({"status": "error", "message": "Superadmin cannot add work"})
+
+        if not work_text:
+            return jsonify({"status": "error", "message": "Work cannot be empty"})
+
+        cursor.execute("""
+            INSERT INTO today_work (user_id, employee_name, department, work, work_date)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (user_id, session['username'], session['department'], work_text, today))
+
+        mysql.connection.commit()
+        cursor.close()
+        return jsonify({"status": "success", "message": "Today's work added successfully"})
+
+    # GET request (for modal content)
+    today_works = []
+    if role in ['employee', 'intern']:
+        cursor.execute("SELECT employee_name, work FROM today_work WHERE user_id=%s AND work_date=%s", (user_id, today))
+        today_works = cursor.fetchall()
+    elif role == 'head':
+        cursor.execute("""
+            SELECT employee_name, work
+            FROM today_work
+            WHERE user_id = %s AND work_date = %s
+            UNION ALL
+            SELECT tw.employee_name, tw.work
+            FROM today_work tw
+            JOIN users u ON tw.user_id = u.id
+            WHERE u.assigned_head = %s AND tw.work_date = %s
+        """, (user_id, today, user_id, today))
+        today_works = cursor.fetchall()
+    elif role == 'superadmin':
+        cursor.execute("SELECT employee_name, department, work FROM today_work WHERE work_date = %s", (today,))
+        today_works = cursor.fetchall()
+
+        #Fetch count
+        # Count distinct users who submitted work today
+  
+    
+
+
+    cursor.close()
+    return render_template('today_work.html', today_works=today_works)
 
 # @app.route('/employee/update_password', methods=['POST'])
 # def employee_update_password():

@@ -45,10 +45,7 @@
     </a>
 {% endif %}
 
-       
-
     <div class="nav-divider"></div>
-
 
     <!-- PROJECTS DROPDOWN -->
     <div class="side-dropdown 
@@ -221,6 +218,16 @@
   </div>
 
   <div class="logout-section">
+    {% if session['user_role'] in ('superadmin','head') %}
+      <a class="nav-link1 
+        {% if request.endpoint == 'employee_project_report' %}active{% endif %}"
+        href="{{ url_for('employee_project_report') }}"><i class="fas fa-file"></i> Project Report</a>
+    {% endif %}
+    {% if session['user_role'] =='employee' %}
+      <a class="nav-link1 
+      {% if request.endpoint == 'employee_workreport' %}active{% endif %}"
+      href="{{ url_for('employee_workreport') }}"><i class="fas fa-file"></i> Work Report</a>
+    {% endif %}
     <a href="/logout" class="nav-link1 logout-link">
       <i class="fas fa-sign-out-alt"></i>
       <span>Logout</span>

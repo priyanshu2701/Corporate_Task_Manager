@@ -365,7 +365,7 @@
               {# MODIFICATION: Conditional logic for department field #}
               {% if department %}
                 {# For Admins: Show a disabled input with their department #}
-                <input type="text" class="form-control" value="{{ department }}" disabled>
+                <input type="text" class="form-control" id="projectDepartment" value="{{ department }}" disabled>
                 <input type="hidden" name="department" value="{{ department }}">
               {% else %}
                 {# For Superadmins: Show the dropdown #}
@@ -379,13 +379,31 @@
               {% endif %}
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Project Head(s) (Admin Only)</label>
-              <select name="project_head_ids" class="form-select" id="projectHead">
-                {% for admin in admins %}
-                <option value="{{ admin.id }}" data-department="{{ admin.department }}">{{ admin.name }} ({{ admin.email }})</option>
-                {% endfor %}
-              </select>
-            </div>
+                  <label class="form-label">Project Head</label>
+
+                  {% if session['user_role'] == 'superadmin' %}
+                    <select name="project_head_ids" class="form-select" id="projectHead">
+                      {% for admin in admins %}
+                        <option value="{{ admin.id }}"
+                                data-department="{{ admin.department }}">
+                          {{ admin.name }} ({{ admin.email }})
+                        </option>
+                      {% endfor %}
+                    </select>
+
+                  {% elif session['user_role'] == 'head' %}
+                    <input type="text"
+                          class="form-control"
+                          value="{{ session['username'] }}"
+                          disabled>
+
+                    <!-- hidden field so backend still gets head id -->
+                    <input type="hidden"
+                          name="project_head_ids"
+                          value="{{ session['user_id'] }}">
+                  {% endif %}
+          </div>
+
             
 <div class="col-md-6 mb-3">
     <label class="form-label">Project Members</label>
@@ -395,6 +413,7 @@
             {% set is_busy = member.id|string in busy_members %}
             <option 
                 value="{{ member.id }}"
+                data-head="{{ member.assigned_head  }}"
                 data-department="{{ member.department }}"
                 class="{{ 'busy-member' if is_busy else 'free-member' }}"
             >
@@ -404,7 +423,6 @@
         {% endfor %}
     </select>
 
-    <small class="text-muted">Hold CTRL to select multiple members.</small>
 </div>
 
 
@@ -463,84 +481,89 @@ document.addEventListener("DOMContentLoaded", function () {
     // Element Selectors
     // ----------------------------
     const departmentSelect = document.getElementById("projectDepartment");
-    const projectHeadSelect = document.getElementById("projectHead");
     const projectMemberSelect = document.getElementById("projectMembers");
 
     // ----------------------------
-    // Initialize Choices.js
-    // ----------------------------
-    const headChoices = new Choices(projectHeadSelect, { removeItemButton: true }); 
-    const memberChoices = new Choices(projectMemberSelect, { removeItemButton: true });
+// =============================
+// Initialize Choices.js
+// =============================
+const projectHeadSelect = document.getElementById("projectHead");
 
-    // ----------------------------
-    // Store original options
-    // ----------------------------
-    const allHeadOptions = Array.from(projectHeadSelect.options).map(option => ({
-        value: option.value,
-        label: option.textContent,
-        customProperties: { department: option.dataset.department }
-    }));
+let headChoices = null;
 
-    const allMemberOptions = Array.from(projectMemberSelect.options).map(option => ({
-        value: option.value,
-        label: option.textContent,
-        customProperties: { department: option.dataset.department }
-    }));
-
-    // ----------------------------
-    // Handle Department Change
-    // ----------------------------
-if (departmentSelect) {
-    departmentSelect.addEventListener("change", function () {
-        const dept = this.value;
-
-        /* =======================
-           FILTER PROJECT HEADS
-        ======================= */
-
-        const filteredHeads = allHeadOptions.filter(opt =>
-            !dept || opt.customProperties.department === dept
-        );
-
-        const prevHeadValues = [].concat(headChoices.getValue(true) || []);
-
-        headChoices.clearStore();
-        headChoices.setChoices(filteredHeads, "value", "label", true);
-
-        // Restore ONLY if department is selected
-        if (dept) {
-            prevHeadValues
-                .filter(v => filteredHeads.some(o => o.value === v))
-                .forEach(v => headChoices.setChoiceByValue(v));
-        } else {
-            headChoices.removeActiveItems();
-        }
-
-        /* =======================
-           FILTER PROJECT MEMBERS
-        ======================= */
-
-        const filteredMembers = allMemberOptions.filter(opt =>
-            !dept || opt.customProperties.department === dept
-        );
-
-        const prevMemberValues = [].concat(memberChoices.getValue(true) || []);
-
-        memberChoices.clearStore();
-        memberChoices.setChoices(filteredMembers, "value", "label", true);
-
-        if (dept) {
-            prevMemberValues
-                .filter(v => filteredMembers.some(o => o.value === v))
-                .forEach(v => memberChoices.setChoiceByValue(v));
-        } else {
-            memberChoices.removeActiveItems();
-        }
-    });
-
-    // Initialize on page load
-    departmentSelect.dispatchEvent(new Event("change"));
+if (projectHeadSelect) {
+  headChoices = new Choices(projectHeadSelect, {
+    removeItemButton: true
+  });
 }
+const memberChoices = new Choices(projectMemberSelect, { removeItemButton: true });
+
+// =============================
+// Store original data
+// =============================
+const allMembers = Array.from(projectMemberSelect.options).map(opt => ({
+  value: opt.value,
+  label: opt.textContent,
+  department: opt.dataset.department,
+  head: opt.dataset.head
+}));
+
+const allHeads = Array.from(projectHeadSelect.options).map(opt => ({
+  value: opt.value,
+  label: opt.textContent,
+  department: opt.dataset.department
+}));
+
+// =============================
+// Department → Heads + Members
+// =============================
+departmentSelect.addEventListener("change", function () {
+  const dept = this.value;
+
+  // ---- Filter Heads
+  const filteredHeads = allHeads.filter(h =>
+    !dept || h.department === dept
+  );
+
+  headChoices.clearStore();
+  headChoices.setChoices(filteredHeads, "value", "label", true);
+  headChoices.removeActiveItems(); // reset head
+
+  // ---- Filter Members by department ONLY
+  const filteredMembers = allMembers.filter(m =>
+    !dept || m.department === dept
+  );
+
+  memberChoices.clearStore();
+  memberChoices.setChoices(filteredMembers, "value", "label", true);
+});
+
+// =============================
+// Head → Members
+// =============================
+projectHeadSelect.addEventListener("change", function () {
+  const selectedHead = this.value;
+  const dept = departmentSelect.value;
+
+  let filteredMembers = allMembers.filter(m =>
+    !dept || m.department === dept
+  );
+
+  if (selectedHead) {
+    filteredMembers = filteredMembers.filter(m =>
+      m.head === selectedHead
+    );
+  }
+
+  memberChoices.clearStore();
+  memberChoices.setChoices(filteredMembers, "value", "label", true);
+});
+
+// =============================
+// Init on page load
+// =============================
+departmentSelect.dispatchEvent(new Event("change"));
+
 
 
     // ----------------------------
