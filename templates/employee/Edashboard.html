@@ -268,7 +268,7 @@
         <button class="stat-card pending active" id="pendingBtn" onclick="showTable('pending')">
             <span class="value">
                 {{ assigned_tasks
-                    |selectattr('status', 'equalto', 'Pending')
+                    |rejectattr('status', 'equalto', 'Completed')
                     |list
                     |length if assigned_tasks else 0 }}
                 </span>
@@ -341,7 +341,7 @@
                 </thead>
                 <tbody>
                     {% for task in assigned_tasks %}
-                    {% if task.status == 'Pending' %}
+                    {% if task.status !='Completed' %}
                     <tr>
                         <td>{{ task.task_name or '—' }}</td>
                         <td>{{ task.project_name or 'N/A' }}</td>

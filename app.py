@@ -1,3 +1,5 @@
+import pymysql
+pymysql.install_as_MySQLdb()
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -2399,7 +2401,7 @@ def get_employee_data(user_id):
         FROM assigned_tasks at
         LEFT JOIN projects p ON at.project_id = p.id
         LEFT JOIN users u ON at.assigned_by_user_id = u.id
-        WHERE at.status = 'Pending'
+        WHERE at.status != 'Completed'
           AND at.assigned_to_user_id = %s
         ORDER BY at.due_date DESC
     """, (user_id,))
