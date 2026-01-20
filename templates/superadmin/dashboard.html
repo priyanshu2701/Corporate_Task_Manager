@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard</title>
+    <title>{{ session['user_role'] | capitalize }} Dashboard</title>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
@@ -233,6 +233,23 @@
       .stat-card.weekly-report.superadmin:hover {
         background: #fef9c3;
       }
+
+      .notify-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background-color: #ffc107; /* yellow */
+  animation: blink 1.2s infinite ease-in-out;
+}
+
+@keyframes blink {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
     </style>
   </head>
   <body>
@@ -280,94 +297,177 @@
       </div>
 
       <!-- Main Stats Cards -->
-      {#
-      <div class="dashboard-stats">
-        <a
-          href="{{ url_for('superadmin_viewtasks') if session['user_role'] == 'superadmin' else url_for('admin_viewtasks') }}"
-          class="stat-card"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="stat-card-header">
-            <div class="icon"><i class="fas fa-clipboard-check"></i></div>
-          </div>
-          <div class="number">{{ tasks|length if tasks else 0 }}</div>
-          <div class="label">Total Assigned Tasks</div>
-          <div class="click-hint">
-            <i class="fas fa-eye"></i>
-            View all tasks
-          </div>
-        </a>
+      
+    
 
-        <a
-          href="{{ url_for('superadmin_viewprojects') if session['user_role'] == 'superadmin' else url_for('admin_viewprojects') }}"
-          class="stat-card"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="stat-card-header">
-            <div class="icon"><i class="fas fa-project-diagram"></i></div>
-          </div>
-          <div class="number">{{ projects|length if projects else 0 }}</div>
-          <div class="label">Total Projects</div>
-          <div class="click-hint">
-            <i class="fas fa-eye"></i>
-            View all projects
-          </div>
-        </a>
-
-        {% if session['user_role'] == 'superadmin' %}
-        <a
-          href="{{ url_for('superadmin_weekly_report') }}"
-          class="stat-card"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="stat-card-header">
-            <div class="icon"><i class="fas fa-calendar-week"></i></div>
-          </div>
-          <div class="label">Weekly Report</div>
-          <div class="click-hint">
-            <i class="fas fa-eye"></i>
-            View weekly summaries
-          </div>
-        </a>
-        {% elif session['user_role'] == 'head' %}
-        <a
-          href="{{ url_for('admin_weekly_report') }}"
-          class="stat-card"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="stat-card-header">
-            <div class="icon"><i class="fas fa-calendar-week"></i></div>
-          </div>
-          <div class="label">Weekly Report</div>
-          <div class="click-hint">
-            <i class="fas fa-eye"></i>
-            View weekly summaries
-          </div>
-        </a>
-
-        {% endif %}
-      </div>
-      #} {% if session['user_role']=='superadmin' %}
+    
+      {% if session['user_role']=='superadmin' %}
 
       <div class="stats-cards" id="departmentButtons">
-        <button
+       <button
           class="stat-card active"
           onclick="showDepartment('sales', this)"
         >
-          <span class="label">Sales</span>
+
+          {% set overdue_count =
+              projects
+              | selectattr('department', 'equalto', 'Sales')
+              | selectattr('deadline_date', 'defined')
+              | selectattr('deadline_date', 'lt', today)
+              | rejectattr('status', 'equalto', 'Completed')
+              | list
+              | length
+          %}
+
+          {% set due_soon_count =
+              projects
+              | selectattr('department', 'equalto', 'Sales')
+              | selectattr('deadline_date', 'defined')
+              | selectattr('deadline_date', 'ge', today)
+              | selectattr('deadline_date', 'le', due_soon_limit)
+              | rejectattr('status', 'equalto', 'Completed')
+              | list
+              | length
+          %}
+
+          <span class="value text-danger">
+            {{ overdue_count }}
+          </span>
+
+          <span class="label">
+            Sales
+            {% if due_soon_count > 0 %}
+              <span class="notify-dot"></span>
+            {% endif %}
+          </span>
+
         </button>
 
-        <button class="stat-card" onclick="showDepartment('developer', this)">
-          <span class="label">Developer</span>
-        </button>
 
-        <button class="stat-card" onclick="showDepartment('graphics', this)">
-          <span class="label">Graphics</span>
-        </button>
 
-        <button class="stat-card" onclick="showDepartment('digital', this)">
-          <span class="label">Digital</span>
-        </button>
+
+
+              <button
+                class="stat-card active"
+                onclick="showDepartment('developer', this)"
+              >
+
+                {% set overdue_count =
+                    projects
+                    | selectattr('department', 'equalto', 'Developer')
+                    | selectattr('deadline_date', 'defined')
+                    | selectattr('deadline_date', 'lt', today)
+                    | rejectattr('status', 'equalto', 'Completed')
+                    | list
+                    | length
+                %}
+
+                {% set due_soon_count =
+                    projects
+                    | selectattr('department', 'equalto', 'Developer')
+                    | selectattr('deadline_date', 'defined')
+                    | selectattr('deadline_date', 'ge', today)
+                    | selectattr('deadline_date', 'le', due_soon_limit)
+                    | rejectattr('status', 'equalto', 'Completed')
+                    | list
+                    | length
+                %}
+
+                <span class="value text-danger">
+                  {{ overdue_count }}
+                </span>
+
+                <span class="label">
+                  Developer
+                  {% if due_soon_count > 0 %}
+                    <span class="notify-dot"></span>
+                  {% endif %}
+                </span>
+
+              </button>
+
+
+
+        <button
+            class="stat-card active"
+            onclick="showDepartment('graphics', this)"
+          >
+
+            {% set overdue_count =
+                projects
+                | selectattr('department', 'equalto', 'Graphics')
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'lt', today)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            {% set due_soon_count =
+                projects
+                | selectattr('department', 'equalto', 'Graphics')
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'ge', today)
+                | selectattr('deadline_date', 'le', due_soon_limit)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            <span class="value text-danger">
+              {{ overdue_count }}
+            </span>
+
+            <span class="label">
+              Graphics
+              {% if due_soon_count > 0 %}
+                <span class="notify-dot"></span>
+              {% endif %}
+            </span>
+
+          </button>
+
+
+
+        <button
+            class="stat-card active"
+            onclick="showDepartment('digital', this)"
+          >
+
+            {% set overdue_count =
+                projects
+                | selectattr('department', 'equalto', 'Digital')
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'lt', today)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            {% set due_soon_count =
+                projects
+                | selectattr('department', 'equalto', 'Digital')
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'ge', today)
+                | selectattr('deadline_date', 'le', due_soon_limit)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            <span class="value text-danger">
+              {{ overdue_count }}
+            </span>
+
+            <span class="label">
+              Digital
+              {% if due_soon_count > 0 %}
+                <span class="notify-dot"></span>
+              {% endif %}
+            </span>
+
+          </button>
+
 
         <!-- INLINE DIVIDER -->
         <div class="inline-divider"></div>
@@ -377,24 +477,84 @@
           onclick="openWeeklyReport(this)"
         >
           <i class="fas fa-calendar-week"></i>
-          <span class="label">Weekly Report</span>
+          <span class="label">Employee Work Report</span>
         </button>
       </div>
 
       <!-- Divider -->
 
-      {% endif %} {% if session['user_role'] == 'head' %}
+      {% endif %} 
+
+      <!-- HEAD DASHBOARD MAIN BUTTONS -->
+      {% if session['user_role'] == 'head' %}
 
       <div class="stats-cards" id="headButtons">
         <button
           class="stat-card active"
           onclick="showHeadSection('tasks', this)"
         >
-          <span class="label">Tasks</span>
-        </button>
+        {% set overdue_count =
+                dept_tasks
+                
+                | selectattr('due_date', 'defined')
+                | selectattr('due_date', 'lt', today)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            {% set due_soon_count =
+                dept_tasks
+                | selectattr('due_date', 'defined')
+                | selectattr('due_date', 'ge', today)
+                | selectattr('due_date', 'le', due_soon_limit)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            <span class="value text-danger">
+              {{ overdue_count }}
+            </span>
+          <span class="label">
+              Tasks
+              {% if due_soon_count > 0 %}
+                <span class="notify-dot"></span>
+              {% endif %}
+            </span>
+          </button>
 
         <button class="stat-card" onclick="showHeadSection('projects', this)">
-          <span class="label">Projects</span>
+          {% set overdue_count =
+                projects
+                
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'lt', today)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            {% set due_soon_count =
+                projects
+                | selectattr('deadline_date', 'defined')
+                | selectattr('deadline_date', 'ge', today)
+                | selectattr('deadline_date', 'le', due_soon_limit)
+                | rejectattr('status', 'equalto', 'Completed')
+                | list
+                | length
+            %}
+
+            <span class="value text-danger">
+              {{ overdue_count }}
+            </span>
+
+            <span class="label">
+              Projects
+              {% if due_soon_count > 0 %}
+                <span class="notify-dot"></span>
+              {% endif %}
+            </span>
         </button>
 
         <!-- INLINE DIVIDER -->
@@ -406,7 +566,7 @@
           onclick="openWeeklyReport(this)"
         >
           <i class="fas fa-calendar-alt"></i>
-          <span class="label">Weekly Report</span>
+          <span class="label">Employee Work Report</span>
         </button>
       </div>
 
@@ -445,13 +605,13 @@
 
             <button
               class="stat-card pending"
-              onclick="showProjectTable('sales', 'pending', this)"
+              onclick="showProjectTable('sales', 'onhold', this)"
             >
               <span class="value">
                 {{ projects | selectattr('department', 'equalto', 'Sales') |
-                selectattr('status', 'equalto', 'Pending') | list | length }}
+                selectattr('status', 'equalto', 'Onhold') | list | length }}
               </span>
-              <span class="label">Pending</span>
+              <span class="label">On Hold</span>
             </button>
 
             <button
@@ -487,19 +647,35 @@
                   {% if ongoing_projects %} {% for project in ongoing_projects
                   %}
                   <tr
-                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% endif %}"
-                  >
+                      class="{% if project.deadline_date and project.status != 'Completed' %}
+                                {% if project.deadline_date < today %}
+                                  table-danger
+                                {% elif (project.deadline_date - today).days <= 5 %}
+                                  table-warning
+                                {% endif %}
+                            {% endif %}"
+                    >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
                     <td>
-                      {{ project.deadline_date.strftime('%d/%m/%Y') if
-                      project.deadline_date else '—' }} {% if
-                      project.deadline_date and project.deadline_date < today
-                      and project.status != 'Completed' %}
-                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {{ project.deadline_date.strftime('%d %b %Y') if project.deadline_date else '—' }}
+
+                      {% if project.deadline_date and project.status != 'Completed' %}
+                        
+                        {% if project.deadline_date < today %}
+                          <span class="badge bg-danger ms-2">Overdue</span>
+
+                        {% elif (project.deadline_date - today).days <= 5 %}
+                          <span class="badge bg-warning text-dark ms-2">
+                            Deadline in {{ (project.deadline_date - today).days }} days
+                          </span>
+
+                        {% endif %}
+
                       {% endif %}
                     </td>
+
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
@@ -513,8 +689,8 @@
             </div>
           </div>
 
-          <!-- PENDING PROJECTS for sales -->
-          <div class="project-table d-none" id="sales-pending">
+          <!-- ONHOLD PROJECTS for sales -->
+          <div class="project-table d-none" id="sales-onhold">
             <div class="table-responsive">
               <table class="table table-striped">
                 <thead>
@@ -525,22 +701,29 @@
                     <th>Deadline Date</th>
                   </tr>
                 </thead>
-                {% set ongoing_projects = sales_projects | selectattr('status',
-                'equalto', 'Pending') | list %}
+                {% set onhold_projects = sales_projects | selectattr('status',
+                'equalto', 'Onhold') | list %}
                 <tbody>
                   <!-- Jinja loop later -->
-                  {% if ongoing_projects %} {% for project in ongoing_projects
+                  {% if onhold_projects %} {% for project in onhold_projects
                   %}
                   <tr>
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d %b %Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
                     <td colspan="4" class="text-center text-muted">
-                      No Pending Projects
+                      No Projects On Hold
                     </td>
                   </tr>
                   {% endif %}
@@ -608,13 +791,13 @@
 
             <button
               class="stat-card pending"
-              onclick="showProjectTable('developer', 'pending', this)"
+              onclick="showProjectTable('developer', 'onhold', this)"
             >
               <span class="value">
                 {{ projects | selectattr('department', 'equalto', 'Developer') |
-                selectattr('status', 'equalto', 'Pending') | list | length }}
+                selectattr('status', 'equalto', 'Onhold') | list | length }}
               </span>
-              <span class="label">Pending</span>
+              <span class="label">On Hold</span>
             </button>
 
             <button
@@ -648,19 +831,38 @@
                   {% if ongoing_projects %} {% for project in ongoing_projects
                   %}
                   <tr
-                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% endif %}"
-                  >
+                      class="{% if project.deadline_date and project.status != 'Completed' %}
+                                {% if project.deadline_date < today %}
+                                  table-danger
+                                {% elif (project.deadline_date - today).days <= 5 %}
+                                  table-warning
+                                {% endif %}
+                            {% endif %}"
+                    >
+
+
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
                     <td>
-                      {{ project.deadline_date.strftime('%d/%m/%Y') if
-                      project.deadline_date else '—' }} {% if
-                      project.deadline_date and project.deadline_date < today
-                      and project.status != 'Completed' %}
-                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {{ project.deadline_date.strftime('%d %b %Y') if project.deadline_date else '—' }}
+
+                      {% if project.deadline_date and project.status != 'Completed' %}
+                        
+                        {% if project.deadline_date < today %}
+                          <span class="badge bg-danger ms-2">Overdue</span>
+
+                        {% elif (project.deadline_date - today).days <= 5 %}
+                          <span class="badge bg-warning text-dark ms-2">
+                            Deadline in {{ (project.deadline_date - today).days }} days
+                          </span>
+
+                        {% endif %}
+
                       {% endif %}
                     </td>
+
+
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
@@ -674,8 +876,8 @@
             </div>
           </div>
 
-          <!-- PENDING PROJECTS for Developers -->
-          <div class="project-table d-none" id="developer-pending">
+          <!-- ONHOLD PROJECTS for Developers -->
+          <div class="project-table d-none" id="developer-onhold">
             <div class="table-responsive">
               <table class="table table-striped">
                 <thead>
@@ -686,22 +888,34 @@
                     <th>Deadline Date</th>
                   </tr>
                 </thead>
-                {% set pending_projects = developer_projects |
-                selectattr('status', 'equalto', 'Pending') | list %}
+                {% set onhold_projects = developer_projects |
+                selectattr('status', 'equalto', 'Onhold') | list %}
                 <tbody>
                   <!-- Jinja loop later -->
-                  {% if pending_projects %} {% for project in pending_projects
+                  {% if onhold_projects %} {% for project in onhold_projects
                   %}
-                  <tr>
+                  <tr
+                    class="{% if project.deadline_date
+                     and project.deadline_date < today and project.status != 'Completed' %} 
+                     table-danger 
+                     {% endif %}"
+                  >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d %b %Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
                     <td colspan="4" class="text-center text-muted">
-                      No Pending Projects
+                      No Projects on Hold
                     </td>
                   </tr>
                   {% endif %}
@@ -720,7 +934,7 @@
                     <th>Members</th>
                     <th>Start Date</th>
                     <th>Deadline Date</th>
-                    <th>Completed On</th>
+                   <!-- <th>Completed On</th> -->
                   </tr>
                 </thead>
 
@@ -735,7 +949,7 @@
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
                     <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.completed_date or '—' }}</td>
+                    <!-- <td>{{ project.completed_date or '—' }}</td> -->
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
@@ -771,13 +985,13 @@
 
             <button
               class="stat-card pending"
-              onclick="showProjectTable('graphics', 'pending', this)"
+              onclick="showProjectTable('graphics', 'onhold', this)"
             >
               <span class="value">
                 {{ projects | selectattr('department', 'equalto', 'Graphics') |
-                selectattr('status', 'equalto', 'Pending') | list | length }}
+                selectattr('status', 'equalto', 'Onhold') | list | length }}
               </span>
-              <span class="label">Pending</span>
+              <span class="label">On Hold</span>
             </button>
 
             <button
@@ -810,17 +1024,32 @@
                   {% if ongoing_projects %} {% for project in ongoing_projects
                   %}
                   <tr
-                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% elif project.status == 'Completed' %} table-success {% endif %}"
-                  >
+                      class="{% if project.deadline_date and project.status != 'Completed' %}
+                                {% if project.deadline_date < today %}
+                                  table-danger
+                                {% elif (project.deadline_date - today).days <= 5 %}
+                                  table-warning
+                                {% endif %}
+                            {% endif %}"
+                    >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
                     <td>
-                      {{ project.deadline_date.strftime('%d/%m/%Y') if
-                      project.deadline_date else '—' }} {% if
-                      project.deadline_date and project.deadline_date < today
-                      and project.status != 'Completed' %}
-                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {{ project.deadline_date.strftime('%d %b %Y') if project.deadline_date else '—' }}
+
+                      {% if project.deadline_date and project.status != 'Completed' %}
+                        
+                        {% if project.deadline_date < today %}
+                          <span class="badge bg-danger ms-2">Overdue</span>
+
+                        {% elif (project.deadline_date - today).days <= 5 %}
+                          <span class="badge bg-warning text-dark ms-2">
+                            Deadline in {{ (project.deadline_date - today).days }} days
+                          </span>
+
+                        {% endif %}
+
                       {% endif %}
                     </td>
                   </tr>
@@ -836,8 +1065,8 @@
             </div>
           </div>
 
-          <!-- PENDING PROJECTS for graphics -->
-          <div class="project-table d-none" id="graphics-pending">
+          <!-- ONHOLD PROJECTS for graphics -->
+          <div class="project-table d-none" id="graphics-onhold">
             <div class="table-responsive">
               <table class="table table-striped">
                 <thead>
@@ -848,22 +1077,34 @@
                     <th>Deadline Date</th>
                   </tr>
                 </thead>
-                {% set pending_projects = graphics_projects |
-                selectattr('status', 'equalto', 'Pending') | list %}
+                {% set onhold_projects = graphics_projects |
+                selectattr('status', 'equalto', 'Onhold') | list %}
                 <tbody>
                   <!-- Jinja loop later -->
-                  {% if pending_projects %} {% for project in pending_projects
+                  {% if onhold_projects %} {% for project in onhold_projects
                   %}
-                  <tr>
+                  <tr
+                    class="{% if project.deadline_date 
+                            and project.deadline_date < today and project.status != 'Completed' %}
+                             table-danger 
+                             {% endif %}"
+                  >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d %b %Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
                     <td colspan="4" class="text-center text-muted">
-                      No Pending Projects
+                      No Projects on Hold
                     </td>
                   </tr>
                   {% endif %}
@@ -931,13 +1172,13 @@
 
             <button
               class="stat-card pending"
-              onclick="showProjectTable('digital', 'pending', this)"
+              onclick="showProjectTable('digital', 'onhold', this)"
             >
               <span class="value">
                 {{ projects | selectattr('department', 'equalto', 'Digital') |
-                selectattr('status', 'equalto', 'Pending') | list | length }}
+                selectattr('status', 'equalto', 'Onhold') | list | length }}
               </span>
-              <span class="label">Pending</span>
+              <span class="label">On Hold</span>
             </button>
 
             <button
@@ -970,17 +1211,32 @@
                   {% if ongoing_projects %} {% for project in ongoing_projects
                   %}
                   <tr
-                    class="{% if project.deadline_date and project.deadline_date < today and project.status != 'Completed' %} table-danger {% elif project.status == 'Completed' %} table-success {% endif %}"
-                  >
+                      class="{% if project.deadline_date and project.status != 'Completed' %}
+                                {% if project.deadline_date < today %}
+                                  table-danger
+                                {% elif (project.deadline_date - today).days <= 5 %}
+                                  table-warning
+                                {% endif %}
+                            {% endif %}"
+                    >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
                     <td>
-                      {{ project.deadline_date.strftime('%d/%m/%Y') if
-                      project.deadline_date else '—' }} {% if
-                      project.deadline_date and project.deadline_date < today
-                      and project.status != 'Completed' %}
-                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {{ project.deadline_date.strftime('%d %b %Y') if project.deadline_date else '—' }}
+
+                      {% if project.deadline_date and project.status != 'Completed' %}
+                        
+                        {% if project.deadline_date < today %}
+                          <span class="badge bg-danger ms-2">Overdue</span>
+
+                        {% elif (project.deadline_date - today).days <= 5 %}
+                          <span class="badge bg-warning text-dark ms-2">
+                            Deadline in {{ (project.deadline_date - today).days }} days
+                          </span>
+
+                        {% endif %}
+
                       {% endif %}
                     </td>
                   </tr>
@@ -996,8 +1252,8 @@
             </div>
           </div>
 
-          <!-- PENDING PROJECTS for Digital -->
-          <div class="project-table d-none" id="digital-pending">
+          <!-- ONHOLD PROJECTS for Digital -->
+          <div class="project-table d-none" id="digital-onhold">
             <div class="table-responsive">
               <table class="table table-striped">
                 <thead>
@@ -1009,22 +1265,34 @@
                   </tr>
                 </thead>
 
-                {% set pending_projects = digital_projects |
-                selectattr('status', 'equalto', 'Pending') | list %}
+                {% set onhold_projects = digital_projects |
+                selectattr('status', 'equalto', 'Onhold') | list %}
                 <tbody>
                   <!-- Jinja loop later -->
-                  {% if pending_projects %} {% for project in pending_projects
+                  {% if onhold_projects %} {% for project in onhold_projects
                   %}
-                  <tr>
+                  <tr
+                    class="{% if project.deadline_date 
+                            and project.deadline_date < today and project.status != 'Completed' %}
+                             table-danger 
+                             {% endif %}"
+                  >
                     <td>{{ project.project_name }}</td>
                     <td>{{ project.members or 'No members' }}</td>
                     <td>{{ project.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ project.deadline_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                      {{ project.deadline_date.strftime('%d %b %Y') if
+                      project.deadline_date else '—' }} {% if
+                      project.deadline_date and project.deadline_date < today
+                      and project.status != 'Completed' %}
+                      <span class="badge bg-danger ms-2">Overdue</span>
+                      {% endif %}
+                    </td>
                   </tr>
                   {% endfor %} {% else %}
                   <tr>
                     <td colspan="4" class="text-center text-muted">
-                      No Pending Projects
+                      No Projects on Hold
                     </td>
                   </tr>
                   {% endif %}
@@ -1073,7 +1341,8 @@
         {% endif %}
       </div>
 
-      {# TASKS SECTION#} {% if session['user_role'] == 'head' %}
+      {# TASKS SECTION#} 
+      {% if session['user_role'] == 'head' %}
       <div id="tasks-section" class="head-main-section">
         <div class="stats-cards project-filters">
           <button
@@ -1114,22 +1383,38 @@
             'Completed') | list %}
 
             <tbody>
-              {% if ongoing_tasks %} {% for task in ongoing_tasks %}
-              <tr
-                class="{% if task.due_date and task.due_date < today and task.status != 'Completed' %} table-danger {% endif %}"
-              >
+              {% if ongoing_tasks %} 
+              {% for task in ongoing_tasks %}
+              <tr class="{% if task.due_date and task.status != 'Completed' %}
+              {% if task.due_date < today %}
+                table-danger
+              {% elif (task.due_date - today).days <= 5 %}
+                table-warning
+              {% endif %}
+            {% endif %}">
+
                 <td>{{ task.task_name }}</td>
                 <td>{{ task.project_name or '—' }}</td>
                 <td>{{ task.assigned_to or task.assigned_to_email }}</td>
                 <td>{{ task.created_at.strftime('%d %b %Y') }}</td>
                 <td>
-                  {{ task.due_date.strftime('%d/%m/%Y') if
-                  task.due_date else '—' }} {% if task.due_date
-                  and task.due_date < today and task.status !=
-                  'Completed' %}
-                  <span class="badge bg-danger ms-2">Overdue</span>
+                {{ task.due_date.strftime('%d %b %Y') if task.due_date else '—' }}
+
+                {% if task.due_date and task.status != 'Completed' %}
+
+                  {% if task.due_date < today %}
+                    <span class="badge bg-danger ms-2">Overdue</span>
+
+                  {% elif (task.due_date - today).days <= 5 %}
+                    <span class="badge bg-warning text-dark ms-2">
+                      Deadline in {{ (task.due_date - today).days }} days
+                    </span>
+
                   {% endif %}
-                </td>
+
+                {% endif %}
+              </td>
+
               </tr>
               {% endfor %} {% else %}
               <tr>
@@ -1189,124 +1474,8 @@
 
       <!--Department Wise buttons -->
 
-      {#
-      <!--Ongoing Project Section -->
 
-      <!-- Section Header -->
-      {% if session['user_role'] == 'superadmin' %}
-      <div class="section-header">
-        <i class="fas fa-spinner icon"></i>
-        <h4>Projects by Department</h4>
-      </div>
-
-      <!-- 🔹 Ongoing Projects by Department -->
-
-      <div class="dashboard-stats mt-4">
-        {% for dept, data, color in [ ('Sales', sales_projects, 'primary'),
-        ('Digital', digital_projects, 'info'), ('Developer', developer_projects,
-        'success'), ('Graphics', graphics_projects, 'warning') ] %}
-        <a
-          href="{{ url_for('superadmin_ongoing_projects', department=dept) }}"
-          class="stat-card border border-{{ color }}"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="icon"><i class="fas fa-project-diagram"></i></div>
-          <div class="number">{{ data.count if data.count else 0 }}</div>
-          <div class="label">{{ dept }} Dept - Ongoing Projects</div>
-          {% if data.project_names %}
-          <small>Projects: {{ data.project_names }}</small>
-          {% else %}
-          <small>No ongoing projects.</small>
-          {% endif %}
-          <small style="color: #007bff; font-weight: 600"
-            >Click to view projects</small
-          >
-        </a>
-        {% endfor %}
-      </div>
-
-      <!-- ADMIN VIEW -->
-      {% elif session['user_role'] == 'head' %}
-
-      <div class="section-header">
-        <i class="fas fa-project-diagram icon"></i>
-        <h4>Ongoing Projects</h4>
-      </div>
-
-      <div class="dashboard-stats mt-4">
-        <a
-          href="{{ url_for('admin_ongoing_projects') }}"
-          class="stat-card border border-primary"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="icon"><i class="fas fa-spinner"></i></div>
-          <div class="number">{{ total_ongoing if total_ongoing else 0 }}</div>
-          <div class="label">Ongoing Projects</div>
-          <small>Click to view</small>
-        </a>
-      </div>
-
-      {% endif %}
-
-      <!-- Section Header -->
-      <div class="section-header">
-        <i class="fas fa-spinner icon"></i>
-        <h4>Tasks by Department</h4>
-      </div>
-
-      <!-- Department Stats -->
-      <div class="dashboard-stats">
-        {# MODIFICATION: Conditional display based on user role {% if
-        session['user_role'] == 'superadmin' %} {% for dept, data, color in [
-        ('Sales', sales_ongoing, 'primary'), ('Digital', digital_ongoing,
-        'info'), ('Developer', developer_ongoing, 'success'), ('Graphics',
-        graphics_ongoing, 'warning') ] %}
-        <a
-          href="{{ url_for('superadmin_ongoing_tasks', department=dept) }}"
-          class="stat-card border border-{{ color }}"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="icon"><i class="fas fa-building"></i></div>
-          <div class="number">
-            {{ data.count if data.count is not none else 0 }}
-          </div>
-          <div class="label">{{ dept }} Dept - In Progress</div>
-          {% if data.assigned_names %}
-          <small>Assigned to: {{ data.assigned_names }}</small>
-          {% else %}
-          <small>No tasks assigned.</small>
-          {% endif %}
-          <small style="color: #007bff; font-weight: 600"
-            >Click to view tasks</small
-          >
-        </a>
-        {% endfor %} {% elif session['user_role'] == 'head' %}
-        <a
-          href="{{ url_for('superadmin_ongoing_tasks', department=department) }}"
-          class="stat-card border border-primary"
-          style="text-decoration: none; color: inherit"
-        >
-          <div class="icon"><i class="fas fa-building"></i></div>
-          <div class="number">
-            {{ department_ongoing.count if department_ongoing.count is not none
-            else 0 }}
-          </div>
-          <div class="label">{{ department }} Dept - In Progress</div>
-          {% if department_ongoing.assigned_names %}
-          <small>Assigned to: {{ department_ongoing.assigned_names }}</small>
-          {% else %}
-          <small>No tasks assigned.</small>
-          {% endif %}
-          <small style="color: #007bff; font-weight: 600"
-            >Click to view tasks</small
-          >
-        </a>
-        {% endif %}
-      </div>
-    </div>
-    #}
-
-    <!-- Bootstrap JS Bundle -->
+    
 
     <!-- Today Work Modal -->
     <div id="todayWorkModal" class="modal-overlay">

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SuperAdmin Dashboard - View Projects</title>
+    <title>{{ session['user_role'] | capitalize }} Dashboard - View Projects</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
     <link
@@ -375,7 +375,7 @@
 
 .status-ongoing { background-color: #e7f5ff; color: #1c7ed6; border-color: #a5d8ff;}
 .status-in-progress { background-color: #f3e8ff; color: #7048e8; border-color: #d0bfff;}
-.status-pending { background-color: #fff9db; color: #f59f00; border-color: #ffec99;}
+.status-onhold { background-color: #fff9db; color: #f59f00; border-color: #ffec99;}
 .status-completed { background-color: #e6fcf5; color: #2f9e44; border-color: #96f2d7;}
 .status-blocked { background-color: #ffe3e3; color: #e03131; border-color: #ffa8a8;}
 .status-filter-form {
@@ -563,6 +563,7 @@
               <select name="status" class="form-select" required id="editProjectStatus">
                 <option value="">Select Status</option>
                 <option value="Ongoing">Ongoing</option>
+                <option value="Onhold">On Hold</option>
                 <option value="Completed">Completed</option>
                 
               </select>

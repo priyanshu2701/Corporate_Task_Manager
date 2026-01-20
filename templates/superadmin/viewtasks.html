@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SuperAdmin Dashboard - View Tasks</title>
+    <title>{{ session['user_role'] | capitalize }} Dashboard - View Tasks</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
 
     <link
@@ -683,7 +683,7 @@
                                 <td data-label="Task Name">{{ task.task_name }}</td>
                                 <td data-label="Date Assigned">{{ task.assigned_date_formatted }}</td>
                                 <td data-label="Time Assigned">{{ task.time_assigned_formatted }}</td>
-                                <td data-label="Due Date">{{ task.due_date }}</td>
+                                <td data-label="Due Date">{{ task.due_date_display }}</td>
                                 <td data-label="Status">
                                     <span class="status-badge status-{{ (task.status | default('')).lower().replace(' ', '-') }}">
                                         {{ task.status }}
@@ -697,7 +697,7 @@
                                             data-task-name="{{ task.task_name }}"
                                             data-task-description="{{ task.task_description }}"
                                             data-task-department="{{ task.department }}"
-                                            data-task-due-date="{{ task.due_date | replace('/', '-') }}"
+                                            data-task-due-date="{{ task.due_date_iso}}"
                                             data-task-status="{{ task.status }}"
                                             data-task-project-id="{{ task.project_id or '' }}"
                                             data-task-assigned-to-id="{{ task.assigned_to_user_id }}"

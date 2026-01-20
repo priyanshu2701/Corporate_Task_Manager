@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - Submitted Tasks</title>
+    <title>{{ session['user_role'] | capitalize }} Dashboard - Project Report</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='./assets/css/main.css') }}" />
@@ -74,6 +74,480 @@
         transform: translateY(-1px); 
         box-shadow: 0 2px 8px rgba(108, 117, 125, 0.4);
      }
+
+     /* MAIN WRAPPER */
+/* MAIN LAYOUT */
+.chat-wrapper {
+    display: flex;
+    height: 90vh;
+    background: #ece5dd;
+    border-radius: 10px;
+    overflow: hidden;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* LEFT SIDEBAR */
+.chat-sidebar {
+    width: 28%;
+    background: #ffffff;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.chat-task {
+    display: block;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #111;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.chat-task:hover {
+    background: #f5f5f5;
+}
+
+.task-title {
+    font-weight: 600;
+}
+
+.task-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+/* RIGHT PANEL */
+.chat-panel {
+    width: 72%;
+    display: flex;
+    flex-direction: column;
+    background: #efeae2;
+    position: relative;
+}
+
+/* CHAT THREAD */
+.chat-thread {
+    display: none;
+    height: 100%;
+}
+
+.chat-thread:target {
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+.chat-header {
+    background: #075e54;
+    color: #fff;
+    padding: 10px 15px;
+}
+
+.chat-header h6 {
+    margin: 0;
+}
+
+/* MESSAGES */
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* CHAT BUBBLES */
+.chat-bubble {
+    max-width: 65%;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    position: relative;
+    word-wrap: break-word;
+}
+
+/* RECEIVED */
+.chat-bubble.received {
+    background: #ffffff;
+    align-self: flex-start;
+    border-top-left-radius: 0;
+}
+
+/* SENT */
+.chat-bubble.sent {
+    background: #dcf8c6;
+    align-self: flex-end;
+    border-top-right-radius: 0;
+}
+
+/* META */
+.chat-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-top: 5px;
+    color: #555;
+}
+
+.status {
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
+.status.approved {
+    color: green;
+}
+
+.status.rejected {
+    color: red;
+}
+
+.status.pending {
+    color: orange;
+}
+
+
+
+        .chat-wrapper {
+            display: flex;
+            height: calc(100vh - 40px);
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        /* LEFT SIDEBAR */
+        .chat-sidebar {
+            width: 340px;
+            background: #ffffff;
+            border-right: 1px solid #e8ecef;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header h5 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header small {
+            opacity: 0.9;
+            font-size: 13px;
+        }
+
+        .chat-task {
+            display: block;
+            padding: 16px 20px;
+            text-decoration: none;
+            color: #2d3748;
+            border-bottom: 1px solid #f0f2f5;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .chat-task::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #667eea;
+            transform: scaleY(0);
+            transition: transform 0.2s ease;
+        }
+
+        .chat-task:hover {
+            background: #f8f9fc;
+        }
+
+       .chat-task.active {
+    background: linear-gradient(90deg, #eef2ff, #ffffff);
+    border-left: 4px solid #4f46e5;
+}
+
+.chat-task.active .task-title {
+    color: #4f46e5;
+}
+
+
+        .chat-task.active::before {
+            transform: scaleY(1);
+        }
+
+        .task-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #1a202c;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .task-meta {
+            font-size: 12px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .task-meta .assignee {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .task-meta .dot {
+            width: 3px;
+            height: 3px;
+            background: #cbd5e0;
+            border-radius: 50%;
+        }
+
+        /* RIGHT PANEL */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fafbfc;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #a0aec0;
+            gap: 12px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            opacity: 0.5;
+        }
+
+        /* CHAT THREAD */
+        .chat-thread {
+            display: none;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .chat-thread.active {
+            display: flex;
+        }
+
+        /* HEADER */
+        .chat-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e8ecef;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .chat-header h6 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 6px;
+        }
+
+        .chat-header small {
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .task-dates {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        .date-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #4a5568;
+        }
+
+        .date-label {
+            font-weight: 500;
+            color: #718096;
+        }
+
+        .days-remaining {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        /* MESSAGES */
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            /*display: flex;
+            flex-direction: column; */
+            gap: 16px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        /* CHAT BUBBLES */
+        .chat-bubble {
+            max-width: 75%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e8ecef;
+        }
+            .chat-bubble.sent {
+    align-self: flex-end;
+    background: #e0e7ff;
+    border-top-right-radius: 4px;
+}
+
+.chat-bubble.received {
+    align-self: flex-start;
+    background: #ffffff;
+    border-top-left-radius: 4px;
+}
+
+        .chat-text {
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .chat-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: #a0aec0;
+            flex-wrap: wrap;
+        }
+
+        .chat-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: capitalize;
+            font-size: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .status.approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .no-submissions {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0aec0;
+        }
+
+        .no-submissions svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 968px) {
+            .chat-sidebar {
+                width: 280px;
+            }
+            
+            .chat-bubble {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .chat-wrapper {
+                border-radius: 0;
+                height: 100vh;
+            }
+
+            .chat-sidebar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .chat-sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+
     </style>
 </head>
 <body>
@@ -143,86 +617,124 @@
         </form>
         <br>
         {% if project_summary %}
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="fw-bold">{{ project_summary.name }}</h5>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold">{{ project_summary.name }}</h5>
 
-        <div class="row">
-            <div class="col-md-3">
-                <strong>Start Date:</strong><br>
-                {{ project_summary.start_date.strftime('%d %b %Y') if project_summary.start_date else 'N/A' }}
-            </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Start Date:</strong><br>
+                            {{ project_summary.created_at.strftime('%d %b %Y') if project_summary.created_at else 'N/A' }}
+                        </div>
 
-            <div class="col-md-3">
-                <strong>Due Date:</strong><br>
-                {{ project_summary.deadline_date.strftime('%d %b %Y') if project_summary.deadline_date else 'N/A' }}
-            </div>
+                        <div class="col-md-3">
+                            <strong>Due Date:</strong><br>
+                            {{ project_summary.deadline_date.strftime('%d %b %Y') if project_summary.deadline_date else 'N/A' }}
+                        </div>
 
-            <div class="col-md-3">
-                <strong>Status:</strong><br>
-                <span class="badge bg-{{ project_summary.status_class }}">
-                    {{ project_summary.status_text }}
-                </span>
-            </div>
+                        <div class="col-md-3">
+                            <strong>Status:</strong><br>
+                            <span class="badge bg-{{ project_summary.status_class }}">
+                                {{ project_summary.status_text }}
+                            </span>
+                        </div>
 
-            {% if project_summary.status_text == 'Completed' %}
-            <div class="col-md-3">
-                <strong>Completed In:</strong><br>
-                {{ project_summary.duration_days }} days
+                        {% if project_summary.status_text == 'Completed' %}
+                        <div class="col-md-3">
+                            <strong>Completed In:</strong><br>
+                            {{ project_summary.duration_days }} days
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             {% endif %}
-        </div>
-    </div>
-</div>
-{% endif %}
+
+{# chat section for tasks #}
 
 
-        {% if submitted_tasks %}
-        <div class="table-responsive mt-3">
-            <table class="table table-bordered table-hover">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Employee</th>
-            <th>Task Description</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for task in submitted_tasks %}
-        <tr>
-            <td>{{ task.created_at.strftime('%d %b %Y') }}</td>
-            <td>{{ task.employee_name }}</td>
-            <td>
-                {% if task.task_description %}
-                    {{ task.task_description|safe }}
-                {% else %}
-                    N/A
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+
+<div class="chat-wrapper">
+
+    {% if selected_project %}
+
+        {% if chat_tasks %}
+            <!-- REAL CHAT UI -->
+
+            <div class="chat-sidebar"> 
+                {% for task in chat_tasks.values() %} 
+                    <a href="{{ url_for(
+                            'employee_project_report',
+                            department=selected_department,
+                            project_id=selected_project,
+                            from_date=from_date,
+                            to_date=to_date
+                        ) }}#task-{{ task.task_id }}"
+                    class="chat-task">
 
 
-            <!-- Pagination -->
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
-                    {% for i in range(1, total_pages + 1) %}
-                    <li class="page-item {% if i == current_page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for(endpoint, page=i, from_date=from_date, to_date=to_date) }}">{{ i }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </nav>
-        </div>
+
+                        <div class="task-title">{{ task.task_name }}</div> 
+                        <div class="task-meta">
+                            {{ task.assigned_by }} → {{ task.assigned_to }}<br>
+                            {{ task.date_assigned.strftime('%d %b %Y') }}
+                        </div> 
+                    </a> 
+                {% endfor %}
+            </div> 
+
+            <div class="chat-panel"> 
+                {% for task in chat_tasks.values() %} 
+                    <div id="task-{{ task.task_id }}" class="chat-thread"> 
+                        <div class="chat-header"> 
+                            <h6>{{ task.task_name }}</h6> 
+                            <small class="text-muted">
+                                Assigned by {{ task.assigned_by }} to {{ task.assigned_to }}
+                            </small>
+                        </div> 
+
+                        <div class="chat-messages"> 
+                            {% if task.submissions %} 
+                                {% for sub in task.submissions %} 
+                                    <div class="chat-bubble {% if sub.submitted_by == task.assigned_to %}sent{% else %}received{% endif %}"> 
+                                        <div class="chat-text">{{ sub.description|safe }}</div> 
+                                        <div class="chat-meta"> 
+                                            <span>{{ sub.submitted_by }}</span> 
+                                            <span>{{ sub.date.strftime('%d %b %Y') }}</span> 
+                                            <span class="status {{ sub.status }}">{{ sub.status }}</span> 
+                                        </div> 
+                                    </div> 
+                                {% endfor %} 
+                            {% else %} 
+                                <p class="text-muted">No submissions yet 👀</p> 
+                            {% endif %} 
+                        </div>
+                    </div> 
+                {% endfor %} 
+            </div>
+
         {% else %}
-        <div class="no-tasks mt-3">
-            <p>No submitted tasks found for the selected criteria.</p>
-        </div>
+            <!-- NO TASKS STATE -->
+            <div class="d-flex justify-content-center align-items-center w-100 text-muted"
+                 style="min-height: 300px; font-size: 1.1rem;">
+                🗂️ No tasks in this project
+            </div>
         {% endif %}
-    </div>
+
+    {% else %}
+        <!-- NO PROJECT SELECTED -->
+        <div class="d-flex justify-content-center align-items-center w-100 text-muted"
+             style="min-height: 300px; font-size: 1.1rem;">
+            📌 Select project to view
+        </div>
+    {% endif %}
+
 </div>
+
+
+
+            </div>
+        </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -242,7 +754,17 @@
                 deadlineDateInput.value = this.value;
             }
             });
+
+            document.querySelectorAll('.chat-task').forEach(task => {
+            task.addEventListener('click', () => {
+                document.querySelectorAll('.chat-task').forEach(t => t.classList.remove('active'));
+                task.classList.add('active');
+            });
+            });
+
         });
         </script>
+
+     
 </body>
 </html>
