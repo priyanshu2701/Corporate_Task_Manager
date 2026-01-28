@@ -60,34 +60,50 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 def send_email(recipient_email, subject, body, reply_to_email=None):
-    """
-    Helper function to send an email using credentials from the .env file.
-    Optionally sets a Reply-To header.
-    """
-    if not all([app.config['SMTP_SERVER'], app.config['SMTP_USERNAME'], app.config['SMTP_PASSWORD'], app.config['SENDER_EMAIL']]):
-        print("SMTP settings are not fully configured in .env file. Skipping email.")
+
+    #  HARD STOP for Render / prod toggle
+    if os.getenv("EMAIL_ENABLED", "false").lower() != "true":
+        print(" Email disabled by environment. Skipping send.")
+        return
+
+    # Existing config safety
+    if not all([
+        app.config.get('SMTP_SERVER'),
+        app.config.get('SMTP_PORT'),
+        app.config.get('SMTP_USERNAME'),
+        app.config.get('SMTP_PASSWORD'),
+        app.config.get('SENDER_EMAIL')
+    ]):
+        print(" SMTP settings missing. Skipping email.")
         return
 
     msg = MIMEMultipart()
     msg['From'] = app.config['SENDER_EMAIL']
     msg['To'] = recipient_email
     msg['Subject'] = subject
-    # If a reply_to_email is provided, add it as a header
+
     if reply_to_email:
         msg.add_header('Reply-To', reply_to_email)
 
     msg.attach(MIMEText(body, 'html'))
 
     try:
-        with smtplib.SMTP(app.config['SMTP_SERVER'], app.config['SMTP_PORT']) as server:
+        with smtplib.SMTP(
+            app.config['SMTP_SERVER'],
+            app.config['SMTP_PORT'],
+            timeout=10   # ⏱️ extra safety
+        ) as server:
             server.starttls()
-            # --- FIX: Use the correct configuration keys for login ---
-            server.login(app.config['SMTP_USERNAME'],
-                         app.config['SMTP_PASSWORD'])
+            server.login(
+                app.config['SMTP_USERNAME'],
+                app.config['SMTP_PASSWORD']
+            )
             server.send_message(msg)
-            print(f"Email sent successfully to {recipient_email}")
+            print(f" Email sent to {recipient_email}")
+
     except Exception as e:
-        print(f"Failed to send email to {recipient_email}: {e}")
+        print(f" Email failed (ignored): {e}")
+
 
 def summarize_with_openrouter(text_to_summarize):
     if not OPENROUTER_API_KEY:
