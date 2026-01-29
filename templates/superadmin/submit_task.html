@@ -225,6 +225,7 @@
                 >
                   <option value="">None - General Update</option>
                   {% for task in assigned_tasks %}
+                  
                   <option
                     value="{{ task.id }}"
                     data-project-id="{{ task.project_id }}"
@@ -232,6 +233,7 @@
                   >
                     {{ task.task_name }} (Due: {{ task.due_date }})
                   </option>
+                  
                   {% endfor %}
                 </select>
               </div>

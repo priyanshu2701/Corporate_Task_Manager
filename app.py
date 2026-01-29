@@ -18,6 +18,8 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
 from datetime import date
+from google import genai
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -55,8 +57,7 @@ app.config['SMTP_USERNAME'] = os.getenv('SMTP_USERNAME')
 app.config['SMTP_PASSWORD'] = os.getenv('SMTP_PASSWORD')
 app.config['SENDER_EMAIL'] = os.getenv('SENDER_EMAIL')
 
-# OpenRouter Configuration
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
 
 
 def send_email(recipient_email, subject, body, reply_to_email=None):
@@ -105,57 +106,31 @@ def send_email(recipient_email, subject, body, reply_to_email=None):
         print(f" Email failed (ignored): {e}")
 
 
-def summarize_with_openrouter(text_to_summarize):
-    if not OPENROUTER_API_KEY:
-        print("OpenRouter API key not set.")
-        return "AI summary could not be generated."
+# gemini Configuration
 
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+def summarize_with_gemini(text_to_summarize):
     try:
-        response = requests.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "HTTP-Referer": "http://localhost",
-                "X-Title": "Task Summary Generator",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model":  "deepseek/deepseek-r1-0528:free",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "Summarize the following task update in a concise and professional manner and do not add extra messages from your side as I have to submit this summary to office."
-                    },
-                    {
-                        "role": "user",
-                        "content": text_to_summarize
-                    }
-                ],
-                "temperature": 0.3
-            },
-            timeout=30
+        response = client.models.generate_content(
+            model="models/gemini-flash-latest",
+            contents=(
+                "Summarize the following task update in a concise and professional manner. "
+                "Do not add extra commentary or explanations.\n\n"
+                f"{text_to_summarize}"
+            ),
+            config={
+                "temperature": 0.2,
+                "max_output_tokens": 150
+            }
         )
 
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"].strip()
-
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err}")
-        print("Response content:", http_err.response.text)
-        return f"HTTP error: {http_err.response.text}"
-
-    except requests.exceptions.RequestException as req_err:
-        print(f"Request error: {req_err}")
-        return f"Request error: {req_err}"
+        return response.text.strip()
 
     except Exception as e:
-        print("Unexpected error:", e)
-        return f"Unexpected error: {e}"
-
-
+        print("Gemini error:", e)
+        return "AI summary could not be generated."
     
-
 def allowed_file(filename):
     """
     Checks if a file's extension is allowed for upload.
@@ -2230,7 +2205,7 @@ def admin_submit_task():
             filename = secure_filename(attachment.filename)
             attachment.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        ai_summary = summarize_with_openrouter(task_description)
+        ai_summary = summarize_with_gemini(task_description)
 
         try:
             cursor = mysql.connection.cursor()
@@ -2305,7 +2280,7 @@ def admin_submit_task():
             at.due_date
         FROM assigned_tasks at
         LEFT JOIN projects p ON at.project_id = p.id
-        WHERE at.assigned_to_user_id = %s
+        WHERE at.assigned_to_user_id = %s and at.status!='Completed'
 
     """, (user_id,))
     assigned_tasks = cursor.fetchall()
@@ -2355,7 +2330,7 @@ def admin_viewtasks():
             FROM assigned_tasks at
             JOIN projects p ON at.project_id = p.id
             LEFT JOIN users u ON at.assigned_to_user_id = u.id
-            WHERE p.project_head_id = %s
+            WHERE p.project_head_id = %s and is_active=TRUE
             ORDER BY at.date_assigned DESC, at.time_assigned DESC
             LIMIT %s OFFSET %s
         """, (head_id, per_page, offset))
@@ -2569,14 +2544,23 @@ def employee_createtask():
     if 'logged_in' not in session or session.get('user_role') != 'employee':
         flash('Unauthorized access. Please log in.', 'danger')
         return redirect(url_for('login'))
+    
 
     cur = mysql.connection.cursor(DictCursor)
 
     try:
-        cur.execute("""SELECT id, name, email, department FROM users WHERE role = 'intern' AND is_active = TRUE""")
+        employee_department = session.get('department')
+        cur.execute("""
+            SELECT id, name, email, department
+            FROM users
+            WHERE role = 'intern'
+            AND is_active = TRUE
+            AND department = %s
+        """, (employee_department,))
+
         interns = cur.fetchall()
 
-        cur.execute("""SELECT DISTINCT a.id, a.name, a.department FROM projects a INNER JOIN project_members b ON a.id = b.project_id WHERE FIND_IN_SET(%s, b.user_ids) ORDER BY a.name
+        cur.execute("""SELECT DISTINCT a.id, a.name, a.department,status FROM projects a INNER JOIN project_members b ON a.id = b.project_id WHERE FIND_IN_SET(%s, b.user_ids) ORDER BY a.name
         """, (session['user_id'],))
         projects = cur.fetchall()
 
@@ -2594,7 +2578,11 @@ def employee_createtask():
 
     today_date = datetime.date.today().strftime('%Y-%m-%d')
 
-    return render_template('superadmin/createtask.html',interns=interns, projects=projects, today_date=today_date, busy_users=busy_users)
+    return render_template('superadmin/createtask.html',
+                           interns=interns, 
+                           projects=projects, 
+                           today_date=today_date, 
+                           busy_users=busy_users)
 
 @app.route('/employee/submit_task', methods=['GET', 'POST'])
 def employee_submit_task():
@@ -2617,7 +2605,7 @@ def employee_submit_task():
             filename = secure_filename(attachment.filename)
             attachment.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        ai_summary = summarize_with_openrouter(task_description)
+        ai_summary = summarize_with_gemini(task_description)
 
         try:
             cursor = mysql.connection.cursor()
