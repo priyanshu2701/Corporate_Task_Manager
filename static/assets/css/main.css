@@ -969,6 +969,66 @@ body {
     white-space: pre-line;
 }
 
+/* ===== Mobile button ===== */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 10px 12px;
+  font-size: 18px;
+  border-radius: 6px;
+  z-index: 1100;
+}
+
+/* ===== Desktop ===== */
+@media (min-width: 992px) {
+  .sidebar {
+    transform: translateX(0);
+  }
+
+  .overlay {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 260px;
+  }
+}
+
+/* ===== Mobile & Tablet ===== */
+@media (max-width: 991px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+
+
 
 
   

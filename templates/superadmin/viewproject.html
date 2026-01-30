@@ -454,20 +454,21 @@
                   
                   <td>
                     <div class="d-flex gap-2">
-                       <button class="btn btn-sm btn-warning"
-                          onclick='editProject(
-                              "{{ project.id }}",
-                              "{{ project.name | e }}",
-                              "{{ project.description | e }}",
-                              "{{ project.department | e }}",
-                              "{{ project.project_head_id }}",
-                              "{{ project.created_at_raw }}",
-                              "{{ project.deadline_date_raw }}",
-                              "{{ project.status }}", 
-                              {{ project.member_ids_list | tojson }}
-                          )'>
-                          <i class="fas fa-edit"></i> Edit
-                      </button>
+                      <button class="btn btn-sm btn-warning"
+                        onclick='editProject(
+                            {{ project.id | tojson }},
+                            {{ project.name | tojson }},
+                            {{ project.description | tojson }},
+                            {{ project.department | tojson }},
+                            {{ project.project_head_id | tojson }},
+                            {{ project.created_at_raw | tojson }},
+                            {{ project.deadline_date_raw | tojson }},
+                            {{ project.status | tojson }},
+                            {{ project.member_ids_list | tojson }}
+                        )'>
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+
                       <button class="btn btn-sm btn-danger" onclick="deleteProject('{{ project.id }}')">
                         <i class="fas fa-trash-alt"></i> Delete
                       </button>

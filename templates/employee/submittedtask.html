@@ -535,35 +535,7 @@
     {% include 'sidebar.html' %}
     <div class="content-container">
 
-     <!-- Enhanced Header 
-    <div class="page-header">
-        <h1>📋 My Submitted Tasks</h1>
-        <p>Track and manage all your submitted work items</p>
-    </div>
-
-    Stats Cards 
-    <div class="stats-cards">
-        <div class="stat-card total">
-            <div class="icon">📊</div>
-            <div class="value">{{ submitted_tasks|length if submitted_tasks else 0 }}</div>
-            <div class="label">Total Tasks</div>
-        </div>
-        <div class="stat-card pending">
-            <div class="icon">⏳</div>
-            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'Pending')|list|length if submitted_tasks else 0 }}</div>
-            <div class="label">Pending</div>
-        </div>
-        <div class="stat-card completed">
-            <div class="icon">✅</div>
-            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'Completed')|list|length if submitted_tasks else 0 }}</div>
-            <div class="label">Completed</div>
-        </div>
-        <div class="stat-card in-progress">
-            <div class="icon">🚀</div>
-            <div class="value">{{ submitted_tasks|selectattr('status', 'equalto', 'In Progress')|list|length if submitted_tasks else 0 }}</div>
-            <div class="label">In Progress</div>
-        </div>
-    </div>-->
+    
 
     <!-- Main Content Card -->
     <div class="main-card">
@@ -572,6 +544,55 @@
             <i class="fas fa-inbox"></i>
             All Submitted Tasks
         </div>
+       <form method="GET" class="row g-2 mb-3 align-items-end" id="filterForm">
+
+  <!-- From Date -->
+  <div class="col-md-3">
+    <label class="form-label">From</label>
+    <input
+      type="date"
+      name="from_date"
+      id="from_date"
+      class="form-control"
+      value="{{ request.args.get('from_date', '') }}"
+      onchange="this.form.submit()"
+    >
+  </div>
+
+  <!-- To Date -->
+  <div class="col-md-3">
+    <label class="form-label">To</label>
+    <input
+      type="date"
+      name="to_date"
+      id="to_date"
+      class="form-control"
+      value="{{ request.args.get('to_date', '') }}"
+      onchange="this.form.submit()"
+    >
+  </div>
+
+  <!-- Submission Type -->
+  <div class="col-md-3">
+    <label class="form-label">Submission Type</label>
+    <select
+      name="submission_type"
+      class="form-select"
+      onchange="this.form.submit()"
+    >
+      <option value="">All</option>
+      <option value="assigned" {% if request.args.get('submission_type') == 'assigned' %}selected{% endif %}>
+        Assigned Tasks
+      </option>
+      <option value="general" {% if request.args.get('submission_type') == 'general' %}selected{% endif %}>
+        General / Personal Updates
+      </option>
+    </select>
+  </div>
+
+</form>
+
+
         
         <div class="table-container">
             <table class="modern-table">
@@ -732,6 +753,21 @@
         const descriptionModal = new bootstrap.Modal(descriptionModalEl);
         const modalTitle = document.getElementById('descriptionModalLabel');
         const modalContent = document.getElementById('modalContent');
+
+        const fromDateInput = document.getElementById('from_date');
+        const toDateInput = document.getElementById('to_date');
+         // Set initial minimum "to" date = "from" date
+            toDateInput.min = fromDateInput.value;
+
+            // Whenever "from" date changes
+            fromDateInput.addEventListener('change', function () {
+                toDateInput.min = this.value;
+
+                // If "to" date is less than "from" date, reset it
+                if (toDateInput.value && toDateInput.value < this.value) {
+                toDateInput.value = this.value;
+                }
+            });
 
         // Event delegation for all action buttons
         document.body.addEventListener('click', function(event) {

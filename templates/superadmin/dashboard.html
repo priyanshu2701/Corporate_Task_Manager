@@ -8,10 +8,10 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='./assets/css/main.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.css') }}">
+
+     <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/dashboard.css') }}">
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -19,244 +19,16 @@
       crossorigin="anonymous"
     />
 
-    <style>
-      .stats-cards {
-        display: flex;
-        flex-wrap: wrap;
-
-        align-items: center;
-        gap: 2rem;
-        margin: 1rem 0 2rem 0;
-      }
-
-      .stat-card {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1.6rem;
-        min-width: 200px;
-        height: 66px;
-        padding: 25px 2.25rem;
-        border-radius: 999px;
-        background: #ffffff;
-        border: 1px solid var(--gray-200);
-        cursor: pointer;
-        font-size: 1rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        transition: all 0.25s ease;
-      }
-
-      .stat-card .value {
-        background: #f1f5f9;
-        padding: 0.2rem 0.55rem;
-        border-radius: 999px;
-      }
-
-      /* Label */
-      .stat-card .label {
-        font-weight: 600;
-
-        font-size: 1.1rem;
-        color: var(--text-secondary);
-        font-weight: 600;
-        margin-bottom: 0.1rem;
-      }
-
-      /* Hover */
-      .stat-card:hover {
-        background: #f9fafb;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-      }
-
-      /* Active */
-      .stat-card.active {
-        background: #eef2ff;
-        border-color: #1d4ed8;
-      }
-
-      .stat-card.active .value,
-      .stat-card.active .label {
-        color: #1d4ed8;
-      }
-
-      /* Status accent */
-      .stat-card.pending {
-        border-left: 4px solid #f59e0b;
-      }
-
-      .stat-card.completed {
-        border-left: 4px solid #10b981;
-      }
-
-      .stat-card.ongoing {
-        border-left: 4px solid #3b82f6;
-      }
-
-      .stat-card.ongoingProjects {
-        border-left: 4px solid #e41515ff;
-      }
-      /* Styles for the flash messages to appear as notifications */
-      .flash-messages {
-        position: fixed;
-        top: 20px;
-        left: 50%; /* Center horizontally */
-        transform: translateX(-50%); /* Adjust for exact centering */
-        z-index: 1050; /* Ensure it's above other content */
-        display: flex;
-        flex-direction: column; /* Stack multiple messages vertically */
-        gap: 10px; /* Space between messages */
-        align-items: center; /* Center items within the flex container */
-        width: 100%; /* Take full width to allow centering */
-        max-width: 400px; /* Limit overall width of the notification area */
-      }
-
-      .flash-messages .alert {
-        min-width: 280px; /* Slightly wider */
-        max-width: 90%; /* Responsive width for smaller screens */
-        padding: 15px 20px;
-        border-radius: 0.375rem; /* Standard Bootstrap border-radius (approx 6px) */
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Standard Bootstrap shadow */
-        opacity: 1;
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Smooth transition for fade out and slide */
-        transform: translateY(0); /* Initial position */
-      }
-
-      /* Specific background and text colors for different alert categories (Bootstrap defaults) */
-      .flash-messages .alert-success {
-        color: #155724; /* Dark green text */
-        background-color: #d4edda; /* Light green background */
-        border-color: #c3e6cb; /* Green border */
-      }
-      .flash-messages .alert-danger {
-        color: #721c24; /* Dark red text */
-        background-color: #f8d7da; /* Light red background */
-        border-color: #f5c6cb; /* Red border */
-      }
-      .flash-messages .alert-info {
-        color: #0c5460; /* Dark blue text */
-        background-color: #d1ecf1; /* Light blue background */
-        border-color: #bee5eb; /* Blue border */
-      }
-      .flash-messages .alert-warning {
-        color: #856404; /* Dark yellow text */
-        background-color: #fff3cd; /* Light yellow background */
-        border-color: #ffeeba; /* Yellow border */
-      }
-
-      /* When Bootstrap's .fade.show is removed and .fade is active, it should transition out */
-      .flash-messages .alert.fade:not(.show) {
-        opacity: 0;
-        transform: translateY(-20px); /* Fade out and slightly move up */
-      }
-
-      /* Ensure the close button is styled nicely within the notification */
-      .flash-messages .alert .btn-close {
-        font-size: 0.9rem;
-        padding: 0.5rem;
-        margin: -0.5rem -0.5rem -0.5rem auto; /* Adjust position */
-      }
-
-      @media (max-width: 768px) {
-        .stat-card {
-          min-width: auto;
-          padding: 0.6rem 1rem;
-          height: auto;
-          font-size: 0.9rem;
-        }
-
-        .stat-card .label {
-          font-size: 0.95rem;
-        }
-        .project-table {
-          margin-top: 1rem;
-        }
-      }
-
-      .stat-card.disabled {
-        opacity: 0.5;
-        pointer-events: none;
-      }
-
-      @media (max-width: 768px) {
-        .table th,
-        .table td {
-          white-space: nowrap;
-          font-size: 0.85rem;
-        }
-      }
-
-      .inline-divider {
-        width: 5px;
-        height: 80px;
-        background: linear-gradient(
-          to right,
-          transparent,
-          #6c757d,
-          transparent
-        );
-        margin: 0 12px;
-        align-self: center;
-      }
-
-      .stat-card.weekly-report {
-        gap: 0.8rem;
-      }
-
-      .stat-card.weekly-report i {
-        font-size: 1.2rem;
-      }
-
-      .stat-card.weekly-report.head {
-        background: #ecfeff;
-        border-color: #06b6d4;
-      }
-
-      .stat-card.weekly-report.head .label,
-      .stat-card.weekly-report.head i {
-        color: #0e7490;
-      }
-
-      .stat-card.weekly-report.head:hover {
-        background: #cffafe;
-      }
-
-      .stat-card.weekly-report.superadmin {
-        background: #fefce8;
-        border-color: #facc15;
-      }
-
-      .stat-card.weekly-report.superadmin .label,
-      .stat-card.weekly-report.superadmin i {
-        color: #a16207;
-      }
-
-      .stat-card.weekly-report.superadmin:hover {
-        background: #fef9c3;
-      }
-
-      .notify-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-left: 6px;
-  border-radius: 50%;
-  background-color: #ffc107; /* yellow */
-  animation: blink 1.2s infinite ease-in-out;
-}
-
-@keyframes blink {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.2; }
-  100% { opacity: 1; }
-}
-
-    </style>
+   
   </head>
+  
   <body>
     <div class="main-content">
       {% include 'sidebar.html' %}
 
       <div class="header">
+         
+
         {# Display Flash Messages #} {% with messages =
         get_flashed_messages(with_categories=true) %} {% if messages %}
         <div class="flash-messages">

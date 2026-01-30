@@ -19,13 +19,17 @@ from dotenv import load_dotenv
 from functools import wraps
 from datetime import date
 from google import genai
+# import cloudinary
+# import cloudinary.uploader
+# import cloudinary.api
 
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Initialize Flask application
-app = Flask(__name__, static_folder='public', static_url_path='/public')
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+
 app.secret_key = 'FLASK_SECRET_KEY'  # Secret key for session management
 
 # Session setup for Flask-Session
@@ -35,6 +39,13 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(
 Session(app)
 
 # Upload folder configuration
+
+# cloudinary.config(
+#     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+#     api_key=os.getenv("CLOUDINARY_API_KEY"),
+#     api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+# )
+
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'gif'}
 if not os.path.exists(UPLOAD_FOLDER):
@@ -646,7 +657,6 @@ def superadmin_ongoing_tasks(department):
     # Corrected Path
     return render_template('superadmin/ongoing_tasks.html', tasks=tasks, department=department)
 
-
 @app.route('/superadmin/submitted_tasks')
 def superadmin_submitted_tasks():
     if 'logged_in' not in session or session.get('user_role') != 'superadmin':
@@ -654,28 +664,53 @@ def superadmin_submitted_tasks():
         return redirect(url_for('login'))
 
     project_id_filter = request.args.get('project_id', type=int)
+    submission_type = request.args.get('submission_type')
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     try:
-        # Base query
         query = """
             SELECT
-                st.id, st.task_description, st.status, st.attachment, st.ai_summary,
-                st.created_at as submitted_date,
-                u.name as employee_name,
+                st.id,
+                st.task_description,
+                st.status,
+                st.attachment,
+                st.ai_summary,
+                st.created_at AS submitted_date,
+                u.name AS employee_name,
                 at.task_name,
-                p.name as project_name
+                p.name AS project_name,
+                st.assigned_task_id
             FROM submitted_tasks st
             JOIN users u ON st.user_id = u.id
             LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
             LEFT JOIN projects p ON at.project_id = p.id
+            WHERE 1=1
         """
+
         params = []
 
-        # Add filter if project_id is provided
+        # Project filter
         if project_id_filter:
-            query += " WHERE p.id = %s"
+            query += " AND p.id = %s"
             params.append(project_id_filter)
+
+        # Submission type filter
+        if submission_type == 'general':
+            query += " AND st.assigned_task_id IS NULL"
+        elif submission_type == 'assigned':
+            query += " AND st.assigned_task_id IS NOT NULL"
+        
+         # Date filters
+        if from_date:
+            query += " AND DATE(st.created_at) >= %s"
+            params.append(from_date)
+
+        if to_date:
+            query += " AND DATE(st.created_at) <= %s"
+            params.append(to_date)
 
         query += " ORDER BY st.created_at DESC"
 
@@ -683,11 +718,10 @@ def superadmin_submitted_tasks():
         submitted_tasks = cur.fetchall()
 
         for task in submitted_tasks:
-            if task.get('submitted_date') and isinstance(task['submitted_date'], (datetime.date, datetime.datetime)):
-                task['submitted_date'] = task['submitted_date'].strftime(
-                    '%d/%m/%Y')
+            if task.get('submitted_date'):
+                task['submitted_date'] = task['submitted_date'].strftime('%d/%m/%Y')
 
-        # Fetch all projects for the filter dropdown
+        # Fetch all projects for dropdown
         cur.execute("SELECT id, name FROM projects ORDER BY name")
         projects = cur.fetchall()
 
@@ -695,13 +729,16 @@ def superadmin_submitted_tasks():
         flash(f"Error fetching submitted tasks: {e}", "danger")
         submitted_tasks = []
         projects = []
+
     finally:
         cur.close()
 
-    return render_template('superadmin/submitted_tasks.html',
-                           submitted_tasks=submitted_tasks,
-                           projects=projects,
-                           selected_project=project_id_filter)
+    return render_template(
+        'superadmin/submitted_tasks.html',
+        submitted_tasks=submitted_tasks,
+        projects=projects,
+        selected_project=project_id_filter
+    )
 
 
 @app.route('/add_user', methods=['POST'])
@@ -1918,17 +1955,20 @@ def admin_ongoing_projects():
         user_role='head'
     )
 
-
-
 @app.route('/admin/submitted_tasks')
 @admin_required
 def admin_submitted_tasks():
     department = session.get('department')
-    project_id_filter = request.args.get('project_id', type=int)
 
-    cur = mysql.connection.cursor()
+    project_id_filter = request.args.get('project_id', type=int)
+    task_name_filter = request.args.get('task_name', '').strip()
+    submission_type = request.args.get('submission_type')
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     try:
-        # Base query
         query = """
             SELECT
                 st.id,
@@ -1939,7 +1979,8 @@ def admin_submitted_tasks():
                 st.created_at AS submitted_date,
                 u.name AS employee_name,
                 at.task_name,
-                p.name AS project_name
+                p.name AS project_name,
+                st.assigned_task_id
             FROM submitted_tasks st
             JOIN users u ON st.user_id = u.id
             LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
@@ -1949,37 +1990,60 @@ def admin_submitted_tasks():
 
         params = [department]
 
-        # Add project filter if provided
+        # Project filter
         if project_id_filter:
             query += " AND p.id = %s"
             params.append(project_id_filter)
 
+        # Task name filter
+        if task_name_filter:
+            query += " AND at.task_name LIKE %s"
+            params.append(f"%{task_name_filter}%")
+
+        # Submission type filter
+        if submission_type == 'general':
+            query += " AND st.assigned_task_id IS NULL"
+        elif submission_type == 'assigned':
+            query += " AND st.assigned_task_id IS NOT NULL"
+
+        # Date filters
+        if from_date:
+            query += " AND DATE(st.created_at) >= %s"
+            params.append(from_date)
+
+        if to_date:
+            query += " AND DATE(st.created_at) <= %s"
+            params.append(to_date)
+
         query += " ORDER BY st.created_at DESC"
 
-        cur.execute(query, tuple(params))
+        cur.execute(query, params)
         submitted_tasks = cur.fetchall()
 
         for task in submitted_tasks:
-            if task.get('submitted_date') and isinstance(task['submitted_date'], (datetime.date, datetime.datetime)):
-                task['submitted_date'] = task['submitted_date'].strftime(
-                    '%d/%m/%Y')
+            if task.get('submitted_date'):
+                task['submitted_date'] = task['submitted_date'].strftime('%d/%m/%Y')
 
-        # Fetch projects for the filter dropdown (only from the admin's department)
         cur.execute(
-            "SELECT id, name FROM projects WHERE department = %s ORDER BY name", (department,))
+            "SELECT id, name FROM projects WHERE department = %s ORDER BY name",
+            (department,)
+        )
         projects = cur.fetchall()
 
     except Exception as e:
         flash(f"Error fetching submitted tasks: {e}", "danger")
         submitted_tasks = []
         projects = []
+
     finally:
         cur.close()
 
-    return render_template('superadmin/submitted_tasks.html',
-                           submitted_tasks=submitted_tasks,
-                           projects=projects,
-                           selected_project=project_id_filter)
+    return render_template(
+        'superadmin/submitted_tasks.html',
+        submitted_tasks=submitted_tasks,
+        projects=projects,
+        selected_project=project_id_filter
+    )
 
 
 @app.route('/admin/adduser')
@@ -2710,7 +2774,6 @@ def employee_assigned_tasks():
     # Corrected Path
     return render_template('employee/taskassign.html', name=session['username'], assigned_tasks=assigned_tasks)
 
-
 @app.route('/employee/submitted_tasks')
 def employee_submitted_tasks():
     if 'logged_in' not in session or session.get('user_role') not in ['employee', 'intern']:
@@ -2718,34 +2781,84 @@ def employee_submitted_tasks():
         return redirect(url_for('login'))
 
     user_id = session['user_id']
+
+    submission_type = request.args.get('submission_type')
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
     page = request.args.get('page', 1, type=int)
-    per_page = 5  # Items per page
+    per_page = 5
+    offset = (page - 1) * per_page
 
-    cursor = mysql.connection.cursor()
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
     try:
-        # Get total count of submitted tasks for the user
-        cursor.execute(
-            "SELECT COUNT(id) as count FROM submitted_tasks WHERE user_id = %s", (user_id,))
-        total_tasks = cursor.fetchone()['count']
-        total_pages = ceil(total_tasks / per_page)
-        offset = (page - 1) * per_page
+        # ---------- COUNT ----------
+        count_query = """
+            SELECT COUNT(id) AS count
+            FROM submitted_tasks
+            WHERE user_id = %s
+        """
+        count_params = [user_id]
 
-        # Fetch paginated submitted tasks
-        cursor.execute("""
-            SELECT st.*, p.name as project_name, at.due_date as due_date,
-                   DATE_FORMAT(st.created_at, '%%d/%%m/%%Y') as created_at_date
+        if submission_type == 'general':
+            count_query += " AND assigned_task_id IS NULL"
+        elif submission_type == 'assigned':
+            count_query += " AND assigned_task_id IS NOT NULL"
+
+        if from_date:
+            count_query += " AND DATE(created_at) >= %s"
+            count_params.append(from_date)
+
+        if to_date:
+            count_query += " AND DATE(created_at) <= %s"
+            count_params.append(to_date)
+
+        cursor.execute(count_query, count_params)
+        total_tasks = cursor.fetchone()['count']
+        total_pages = ceil(total_tasks / per_page) if total_tasks else 1
+
+        # ---------- DATA ----------
+        data_query = """
+            SELECT
+                st.*,
+                p.name AS project_name,
+                at.due_date,
+                DATE_FORMAT(st.created_at, '%%d/%%m/%%Y') AS created_at_date
             FROM submitted_tasks st
             LEFT JOIN assigned_tasks at ON st.assigned_task_id = at.id
             LEFT JOIN projects p ON st.project_id = p.id
             WHERE st.user_id = %s
+        """
+        data_params = [user_id]
+
+        if submission_type == 'general':
+            data_query += " AND st.assigned_task_id IS NULL"
+        elif submission_type == 'assigned':
+            data_query += " AND st.assigned_task_id IS NOT NULL"
+
+        if from_date:
+            data_query += " AND DATE(st.created_at) >= %s"
+            data_params.append(from_date)
+
+        if to_date:
+            data_query += " AND DATE(st.created_at) <= %s"
+            data_params.append(to_date)
+
+        data_query += """
             ORDER BY st.created_at DESC
             LIMIT %s OFFSET %s
-        """, (user_id, per_page, offset))
+        """
+        data_params.extend([per_page, offset])
+
+        cursor.execute(data_query, data_params)
         submitted_tasks = cursor.fetchall()
+
     except Exception as e:
         flash(f"Error fetching submitted tasks: {e}", "danger")
         submitted_tasks = []
         total_pages = 1
+
     finally:
         cursor.close()
 
@@ -2757,6 +2870,7 @@ def employee_submitted_tasks():
         total_pages=total_pages,
         endpoint='employee_submitted_tasks'
     )
+
 
 
 @app.route('/employee/profile')

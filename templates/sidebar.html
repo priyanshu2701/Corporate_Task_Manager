@@ -226,7 +226,7 @@
     {% if session['user_role'] =='employee' %}
       <a class="nav-link1 
       {% if request.endpoint == 'employee_workreport' %}active{% endif %}"
-      href="{{ url_for('employee_workreport') }}"><i class="fas fa-file"></i> Work Report</a>
+      href="{{ url_for('employee_workreport') }}"><i class="fas fa-file"></i> Project Report</a>
     {% endif %}
     <a href="/logout" class="nav-link1 logout-link">
       <i class="fas fa-sign-out-alt"></i>
@@ -239,33 +239,38 @@
 
 <!-- ================= JS FIXES ================= -->
 <script>
-  // Toggle mobile sidebar
   function toggleMobileMenu() {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.querySelector(".overlay");
-    sidebar.classList.toggle("active");
-    overlay.classList.toggle("active");
+    document.getElementById("sidebar").classList.toggle("active");
+    document.querySelector(".overlay").classList.toggle("active");
   }
 
-  // Dropdown logic
+  function closeMobileMenu() {
+    document.getElementById("sidebar").classList.remove("active");
+    document.querySelector(".overlay").classList.remove("active");
+  }
+
   function toggleSideDropdown(element) {
-    // Close others
+    event.stopPropagation(); // 🔥 important
+
     document.querySelectorAll(".side-dropdown").forEach(drop => {
       if (drop !== element) drop.classList.remove("active");
     });
 
-    // Toggle current
     element.classList.toggle("active");
   }
 
-  // Close sidebar when clicking outside on mobile
-  document.addEventListener("click", function(event) {
+  // Close sidebar when clicking outside
+  document.addEventListener("click", function (event) {
     const sidebar = document.getElementById("sidebar");
     const btn = document.querySelector(".mobile-menu-btn");
 
-    if (!sidebar.contains(event.target) && !btn.contains(event.target)) {
-      sidebar.classList.remove("active");
-      document.querySelector(".overlay").classList.remove("active");
+    if (
+      window.innerWidth < 992 &&
+      !sidebar.contains(event.target) &&
+      !btn.contains(event.target)
+    ) {
+      closeMobileMenu();
     }
   });
 </script>
+

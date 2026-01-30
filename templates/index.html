@@ -106,12 +106,97 @@
         cursor: pointer;
         color: #6c757d;
       }
+      
+       /* Mobile View */
+      @media (max-width: 992px) {
+      .login-wrapper {
+        width: 95%;
+      }
+
+      .info-panel,
+      .login-box {
+        padding: 30px 25px;
+      }
+    }
+
 
       @media (max-width: 768px) {
-        .login-wrapper {
-          flex-direction: column;
-        }
-      }
+  body {
+    padding: 20px;
+  }
+
+  .login-wrapper {
+    flex-direction: column;
+    border-radius: 16px;
+  }
+
+  .info-panel {
+    text-align: center;
+    padding: 30px 20px;
+  }
+
+  .info-panel h3 {
+    font-size: 1.4rem;
+  }
+
+  .info-panel ul {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .info-panel li {
+    font-size: 0.95rem;
+  }
+
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+
+  .btn-primary {
+    padding: 12px;
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .info-panel h3 {
+    font-size: 1.25rem;
+  }
+
+  .login-title {
+    font-size: 1.35rem;
+  }
+
+  .form-control {
+    font-size: 0.9rem;
+    padding: 12px 40px 12px 12px;
+  }
+
+  .password-toggle {
+    right: 12px;
+    top: 60%;
+  }
+}
+
+.login-wrapper {
+  animation: fadeUp 0.6s ease;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
     </style>
 
     
